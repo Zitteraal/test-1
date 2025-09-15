@@ -300,21 +300,22 @@
 
         .terminal-window {
             width: 70%;
-            max-width: 700px;
+            max-width: none;
             height: 80%;
-            max-height: 500px;
+            max-height: none;
             background-color: #000;
             border: 2px solid #00FF00;
             box-shadow: 0 0 25px rgba(0, 255, 0, 0.7);
             display: flex;
             flex-direction: column;
+            /* kein inneres Scrollen und kein Resize mehr */
             overflow: hidden;
+            resize: none;
             border-radius: 8px;
             position: absolute;
             z-index: 2;
-            resize: both;
-            overflow: auto;
         }
+
 
         .terminal-header {
             background-color: #0a0a0a;
@@ -441,13 +442,18 @@
 
         .chess-board {
             display: grid;
-              grid-template-columns: repeat(8, 1fr);
-              grid-template-rows: repeat(8, 1fr);
-              aspect-ratio: 1 / 1;        /* macht das Brett quadratisch */
-              width: 90vmin;              /* passt sich an Fenster an, max 90% */
-              max-width: 600px;           /* optional, Limit */
-              border: 2px solid #00ff00;  /* grüner Rahmen fürs Hacker-Theme */
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            aspect-ratio: 1 / 1;
+            width: 100%;
+            height: 100%;
+            max-width: none;
+            max-height: none;
+            border: 2px solid #00ff00;
+            box-sizing: border-box;
         }
+
+
 
         .chess-square {
             width: 100%;
@@ -1302,11 +1308,71 @@
                 </div>
             `;
             const chessWindow = createWindow('Schach vs. Stockfish', initialContent, { width: 'auto', height: 'auto' });
-            chessWindow.classList.add('chess-window');
-            chessWindow.style.resize = 'none';
-            chessWindow.style.left = "50%";
-            chessWindow.style.top = "50%";
-            chessWindow.style.transform = "translate(-50%, -50%)";
+            // Funktion: passt Fenster so an, dass Header + quadratisches Schachbrett komplett sichtbar sind
+            function fitChessWindow(win) {
+              // Header-Höhe (falls vorhanden)
+              const header = win.querySelector('.terminal-header');
+              const headerH = header ? header.offsetHeight : 60;
+
+              // Entferne extra Padding im inneren Container (verhindert Scrollbars)
+              const boardContainer = win.querySelector('.chess-board-container');
+              if (boardContainer) {
+                boardContainer.style.padding = '0';            // kein äußeres Padding mehr
+                boardContainer.style.boxSizing = 'border-box';
+                boardContainer.style.width = '100%';
+                boardContainer.style.height = '100%';
+                boardContainer.style.overflow = 'hidden';
+                // falls die initiale version text zeigt, behalte zentrierung:
+                boardContainer.style.display = 'flex';
+                boardContainer.style.flexDirection = 'column';
+                boardContainer.style.alignItems = 'stretch';
+              }
+
+              // Sicherstellen, dass das Board-Element selbst 100% des Container-Inhalts nutzt
+              const boardEl = win.querySelector('.chess-board');
+              if (boardEl) {
+                boardEl.style.width = '100%';
+                boardEl.style.height = '100%';
+                boardEl.style.boxSizing = 'border-box';
+              }
+
+              // Platz für Header + Schatten/Rand (ggf. anpassen)
+              const paddingForWindow = 40; // klein halten, damit Brett so groß wie möglich bleibt
+
+              // Berechne boardSize: das Quadrat, das in den Viewport passt abzüglich Header und padding
+              const maxWidthAvailable = window.innerWidth - paddingForWindow;
+              const maxHeightAvailable = window.innerHeight - paddingForWindow - headerH;
+              const boardSize = Math.max(160, Math.min(maxWidthAvailable, maxHeightAvailable)); // min-Größe 160
+
+              // Setze Fenstergröße: Header + quadratisches Brett
+              win.style.width = boardSize + 'px';
+              win.style.height = (boardSize + headerH) + 'px';
+
+              // Zentrieren
+              win.style.left = '50%';
+              win.style.top = '50%';
+              win.style.transform = 'translate(-50%, -50%)';
+
+              // Kein inneres Scrollen
+              win.style.overflow = 'hidden';
+              // optional: disable resize handle if any left
+              win.style.resize = 'none';
+            }
+
+            // direkt anwenden
+            fitChessWindow(chessWindow);
+
+            // bei Fenstergröße ändern, Fenster nachjustieren
+            // entferne vorherige resize-Handler, falls mehrfach hinzugefügt werden könnte
+            (function attachResizeListener(win) {
+              const handler = () => fitChessWindow(win);
+              window.addEventListener('resize', handler);
+              // falls du später entfernen willst: window.removeEventListener('resize', handler);
+            })(chessWindow);
+
+
+
+
 
             const loaderDiv = chessWindow.querySelector('.chess-board-container');
 
@@ -1371,7 +1437,31 @@
             };
 
             let game = new Chess();
+            // === Stockfish Worker erstellen + Standard-Optionen setzen ===
             let stockfish = new Worker("js/stockfish.js");
+
+            // Configure engine options to speed up responses
+            // Threads: use up to 4 or available logical cores
+            const hwThreads = Math.max(1, Math.min(4, navigator.hardwareConcurrency || 2));
+            stockfish.postMessage(`setoption name Threads value ${hwThreads}`);
+
+            // Hash (MB) — moderate value to speed memory table lookups without bloating
+            stockfish.postMessage(`setoption name Hash value 64`);
+
+            // If engine supports Skill Level, keep existing mapping but we'll set it per-move as well
+            // stockfish.postMessage(`setoption name Skill Level value 10`);
+
+            // Small helper to map slider (0-40) to movetime (ms).
+            // Lower slider => faster (less thinking). Adjust min/max to taste.
+            function computeMoveTimeFromSlider(sliderVal) {
+              const minMS = 80;    // super-fast, low strength
+              const maxMS = 1500;  // slower, stronger
+              const t = Math.max(0, Math.min(40, sliderVal)) / 40; // 0..1
+              // use a non-linear curve (quadratic) so low levels are very fast
+              const scaled = minMS + (maxMS - minMS) * (t * t);
+              return Math.round(scaled);
+            }
+
 
             let selectedSquare = null;
             let pendingPromotion = null;
@@ -1509,10 +1599,27 @@
             function makeBotMove() {
                 if (game.turn() === 'b' && !game.game_over()) {
                     thinkingIndicator.style.display = 'block';
-                    const skillLevel = Math.min(20, parseInt(eloSlider.value, 10)); // max 20 für Stockfish
-                    stockfish.postMessage(`setoption name Skill Level value ${skillLevel}`);
+
+                    // Skill/level mapping stays — keep it if you like
+                    const sliderVal = Math.min(40, parseInt(eloSlider.value, 10) || 10);
+                    const skillLevel = Math.min(20, sliderVal); // keep backward compatibility
+
+                    // Set engine skill level (optional, some builds support it)
+                    try {
+                      stockfish.postMessage(`setoption name Skill Level value ${skillLevel}`);
+                    } catch (e) {
+                      // ignore if unsupported
+                    }
+
+                    // Compute movetime based on the slider: lower slider -> faster response
+                    const movetimeMs = computeMoveTimeFromSlider(sliderVal);
+
+                    // Ensure engine uses latest position
                     stockfish.postMessage(`position fen ${game.fen()}`);
-                    stockfish.postMessage('go depth 15');
+
+                    // Use movetime instead of deep depth search to bound response time
+                    // movetime is in milliseconds
+                    stockfish.postMessage(`go movetime ${movetimeMs}`);
                 }
             }
 
