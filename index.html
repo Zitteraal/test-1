@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hacker-Terminal V2</title>
+    <title>Hacker-Terminal V3</title>
 
     <!-- Import der THREE.js-Bibliothek für 3D-Grafiken -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -157,61 +157,22 @@
         }
 
         @keyframes glitch-anim {
-            0% {
-                text-shadow: none;
-            }
-
-            10% {
-                text-shadow: 0.04em 0.03em 0 #00FF00, -0.02em -0.02em 0 #00FFFF, 0.03em 0.04em 0 #FFFF00;
-            }
-
-            20% {
-                text-shadow: none;
-            }
-
-            30% {
-                text-shadow: 0.02em 0.03em 0 #FF0000, -0.04em -0.02em 0 #00FFFF, 0.02em 0.03em 0 #00FF00;
-            }
-
-            40% {
-                text-shadow: none;
-            }
-
-            50% {
-                text-shadow: -0.03em -0.04em 0 #00FFFF, 0.03em 0.02em 0 #FF0000, -0.02em -0.03em 0 #00FF00;
-            }
-
-            60% {
-                text-shadow: none;
-            }
-
-            70% {
-                text-shadow: 0.04em 0.02em 0 #00FF00, -0.03em -0.03em 0 #FFFF00, 0.04em 0.02em 0 #FF0000;
-            }
-
-            80% {
-                text-shadow: none;
-            }
-
-            90% {
-                text-shadow: -0.02em -0.04em 0 #FFFF00, 0.03em 0.03em 0 #00FFFF, -0.04em -0.02em 0 #00FF00;
-            }
-
-            100% {
-                text-shadow: none;
-            }
+            0% { text-shadow: none; }
+            10% { text-shadow: 0.04em 0.03em 0 #00FF00, -0.02em -0.02em 0 #00FFFF, 0.03em 0.04em 0 #FFFF00; }
+            20% { text-shadow: none; }
+            30% { text-shadow: 0.02em 0.03em 0 #FF0000, -0.04em -0.02em 0 #00FFFF, 0.02em 0.03em 0 #00FF00; }
+            40% { text-shadow: none; }
+            50% { text-shadow: -0.03em -0.04em 0 #00FFFF, 0.03em 0.02em 0 #FF0000, -0.02em -0.03em 0 #00FF00; }
+            60% { text-shadow: none; }
+            70% { text-shadow: 0.04em 0.02em 0 #00FF00, -0.03em -0.03em 0 #FFFF00, 0.04em 0.02em 0 #FF0000; }
+            80% { text-shadow: none; }
+            90% { text-shadow: -0.02em -0.04em 0 #FFFF00, 0.03em 0.03em 0 #00FFFF, -0.04em -0.02em 0 #00FF00; }
+            100% { text-shadow: none; }
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: scale(0.9);
-            }
-
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
         }
 
         /* ========================================================================= */
@@ -308,15 +269,12 @@
             box-shadow: 0 0 25px rgba(0, 255, 0, 0.7);
             display: flex;
             flex-direction: column;
-            /* kein inneres Scrollen und kein Resize mehr */
             overflow: hidden;
             resize: none;
             border-radius: 8px;
             position: absolute;
             z-index: 2;
         }
-
-
 
         .terminal-header {
             background-color: #0a0a0a;
@@ -426,6 +384,69 @@
         }
 
         /* ========================================================================= */
+        /* MODAL STYLING (für Spielende & Speichern) */
+        /* ========================================================================= */
+        .hacker-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 9998;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hacker-modal {
+            background: linear-gradient(180deg, rgba(0,0,0,0.98), rgba(5,5,5,0.95));
+            border: 3px solid #00ff00;
+            padding: 25px;
+            z-index: 9999;
+            text-align: center;
+            color: #00ff00;
+            font-family: 'VT323', monospace;
+            box-shadow: 0 0 40px rgba(0,255,0,0.3);
+            border-radius: 12px;
+        }
+        .hacker-modal h2 {
+            margin-top: 0;
+            font-size: 1.8rem;
+            text-shadow: 0 0 10px #00ff00;
+        }
+        .hacker-modal p {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+        .hacker-modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        .hacker-btn {
+            background: transparent;
+            color: #00FF00;
+            border: 2px solid #00FF00;
+            padding: 10px 20px;
+            font-size: 1.2rem;
+            font-family: 'VT323', monospace;
+            cursor: pointer;
+            text-shadow: 0 0 6px #00FF00;
+            box-shadow: 0 0 12px rgba(0,255,0,0.7);
+            border-radius: 6px;
+            transition: all 0.2s ease-in-out;
+        }
+        .hacker-btn:hover {
+            background: #002a00;
+            box-shadow: 0 0 20px #00FF00;
+            transform: scale(1.05) translateY(-2px);
+        }
+        .hacker-btn.primary {
+            background: #003300;
+        }
+
+        /* ========================================================================= */
         /* SCHACH-STYLING */
         /* ========================================================================= */
         .chess-window .terminal-header {
@@ -454,9 +475,6 @@
             box-sizing: border-box;
         }
 
-
-
-
         .chess-square {
             width: 100%;
             height: 100%;
@@ -469,68 +487,17 @@
             font-size: 2.5vmin; 
         }
 
-        .chess-piece {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100%;
-            font-size: clamp(2.2rem, 5.5vmin, 4.2rem);
-            line-height: 1;
-            user-select: none;
-            pointer-events: none;
-            transform-origin: center;
-            transition: transform 0.2s ease, opacity 0.2s ease;
-            z-index: 1;
-        }
         .chess-piece-img {
             width: 86%;
             height: 86%;
             object-fit: contain;
             pointer-events: none;
             display: block;
+            transition: transform 0.2s ease;
         }
         
-        .chess-piece:enter {
-          opacity: 0;
-          transform: scale(0.5);
-        }
-
-        .chess-piece:enter-active {
-          opacity: 1;
-          transform: scale(1);
-        }
-
-        .chess-piece::before {
-            content: '';
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            width: 64%;
-            height: 64%;
-            border-radius: 50%;
-            z-index: 0;
-            background: radial-gradient(closest-side, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.02) 60%, transparent 100%);
-            box-shadow: inset 0 -8px 14px rgba(0, 0, 0, 0.45);
-            pointer-events: none;
-        }
-
-        .white-piece {
-            color: #ffffff;
-            text-shadow: 0 6px 10px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255, 255, 255, 0.06);
-            -webkit-text-stroke: 0.6px rgba(0, 0, 0, 0.35);
-        }
-
-        .black-piece {
-            color: #0f0f0f;
-            text-shadow: 0 2px 4px rgba(255, 255, 255, 0.04);
-            -webkit-text-stroke: 0.6px rgba(255, 255, 255, 0.02);
-        }
-        
-        .chess-square:hover .chess-piece {
+        .chess-square:hover .chess-piece-img {
             transform: translateY(-6%) scale(1.06);
-            text-shadow: 0 8px 14px rgba(0, 0, 0, 0.6);
         }
         
         .last-move-from {
@@ -592,7 +559,6 @@
              min-width: 40px;
         }
 
-
         #thinking-indicator {
             display: none;
             position: absolute;
@@ -615,14 +581,11 @@
             top: 50%;
             transform: translate(-50%, -50%);
             z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 12px;
+            display: none;
         }
 
-        .promotion-modal.hidden {
-            display: none;
+        .promotion-modal.visible {
+            display: flex;
         }
 
         .promotion-box {
@@ -663,18 +626,6 @@
             transform: translateY(-6%);
             box-shadow: 0 0 14px rgba(0, 255, 0, 0.08);
         }
-        
-        @media (max-width: 420px) {
-            .chess-piece {
-                font-size: clamp(1.6rem, 6vmin, 2.8rem);
-            }
-
-            .chess-piece::before {
-                width: 72%;
-                height: 72%;
-            }
-        }
-
 
         .chess-control {
             margin-top: 15px;
@@ -702,7 +653,6 @@
             box-shadow: 0 0 20px #00FF00;
             transform: scale(1.1);
         }
-
 
         .light {
             background-color: #555;
@@ -746,26 +696,96 @@
         }
 
         @keyframes pulse {
-            from {
-                opacity: 0.7;
-                transform: translate(-50%,-50%) scale(0.9);
-            }
-
-            to {
-                opacity: 1;
-                transform: translate(-50%,-50%) scale(1.1);
-            }
+            from { opacity: 0.7; transform: translate(-50%,-50%) scale(0.9); }
+            to { opacity: 1; transform: translate(-50%,-50%) scale(1.1); }
         }
 
         @keyframes pulse-red {
-            from {
-                opacity: 0.7;
-            }
-
-            to {
-                opacity: 1;
-            }
+            from { opacity: 0.7; }
+            to { opacity: 1; }
         }
+
+        /* ========================================================================= */
+        /* REPLAY VIEWER STYLING */
+        /* ========================================================================= */
+        .replay-viewer-container {
+            padding: 15px;
+            box-sizing: border-box;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            font-size: 1.1rem;
+        }
+        .replay-controls-top {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        #replay-search-input {
+            flex: 1;
+            padding: 8px 12px;
+            background: #0a0a0a;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            font-family: 'VT323', monospace;
+            font-size: 1.1rem;
+            outline: none;
+        }
+        .replay-list-container {
+            flex: 1;
+            overflow-y: auto; /* SCROLLEN HIER AKTIVIERT */
+            border: 1px solid #003300;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+        }
+        .replay-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px dashed rgba(0, 255, 0, 0.2);
+            padding: 8px 4px;
+            cursor: pointer;
+        }
+        .replay-list-item:hover {
+            background: rgba(0, 255, 0, 0.1);
+        }
+        .replay-player-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #replay-board-viewer {
+            width: 100%;
+            max-width: 80vh;
+            aspect-ratio: 1/1;
+            border: 2px solid #00ff00;
+        }
+        .replay-player-controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        #replay-pos-viewer {
+            font-weight: bold;
+            min-width: 60px;
+            text-align: center;
+            font-size: 1.3rem;
+        }
+
     </style>
 </head>
 
@@ -792,17 +812,19 @@
     <div id="desktop">
         <div class="desktop-icon" id="console-icon">
             <svg class="icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path
-                    d="M20 3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM4 19V5h16l-.001 14H4zm1-3h14v1H5v-1zm0-3h14v1H5v-1zm0-3h14v1H5v-1z" />
+                <path d="M20 3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM4 19V5h16l-.001 14H4zm1-3h14v1H5v-1zm0-3h14v1H5v-1zm0-3h14v1H5v-1z" />
             </svg>
             <span class="icon-label">Konsole</span>
         </div>
         <div class="desktop-icon" id="chess-icon">
             <svg class="icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                <path
-                    d="M16 8.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM12.5 10c-.28 0-.5.22-.5.5v5c0 .28.22.5.5.5h1c.28 0 .5-.22.5-.5v-5c0-.28-.22-.5-.5-.5h-1zM18 10.5c-.28 0-.5.22-.5.5v5c0 .28.22.5.5.5h1c.28 0 .5-.22.5-.5v-5c0-.28-.22-.5-.5-.5h-1zM6 10.5c-.28 0-.5.22-.5.5v5c0 .28.22.5.5.5h1c.28 0 .5-.22.5-.5v-5c0-.28-.22-.5-.5-.5H6zM15.5 10c-.28 0-.5.22-.5.5v5c0 .28.22.5.5.5h1c.28 0 .5-.22.5-.5v-5c0-.28-.22-.5-.5-.5h-1zM11.5 10c-.28 0-.5.22-.5.5v5c0 .28.22.5.5.5h1c.28 0 .5-.22.5-.5v-5c0-.28-.22-.5-.5-.5h-1zM9 10.5c-.28 0-.5.22-.5.5v5c0 .28.22.5.5.5h1c.28 0 .5-.22.5-.5v-5c0-.28-.22-.5-.5-.5H9zM12 21c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" />
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L8 12v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
             </svg>
             <span class="icon-label">Schach</span>
+        </div>
+        <div class="desktop-icon" id="replay-icon">
+            <svg class="icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 5V1L8 5l4 4V6c3.87 0 7 3.13 7 7 0 1.3-.34 2.52-.94 3.6L20.9 18C21.6 16.76 22 15.42 22 14c0-5.52-4.48-10-10-10zm0 15c-3.87 0-7-3.13-7-7 0-1.3.34-2.52.94-3.6L3.1 8C2.4 9.24 2 10.58 2 12c0 5.52 4.48 10 10 10v4l4-4-4-4v3z"/></svg>
+            <span class="icon-label">Replays</span>
         </div>
     </div>
 
@@ -811,6 +833,21 @@
     <!-- ========================================================================= -->
     <button id="newTerminalBtn">[ + ]</button>
 
+    <!-- HIER KOMMT DAS TEMPLATE FÜR DAS SPIELENDE-MODAL -->
+    <template id="game-over-modal-template">
+        <div class="hacker-modal-overlay">
+            <div class="hacker-modal">
+                <h2 id="modal-title">Partie beendet!</h2>
+                <p id="modal-text">Möchtest du die Partie speichern?</p>
+                <div class="hacker-modal-buttons">
+                    <button class="hacker-btn" id="modal-action-save">Speichern</button>
+                    <button class="hacker-btn primary" id="modal-action-new">Neues Spiel</button>
+                    <button class="hacker-btn" id="modal-action-close">Schließen</button>
+                </div>
+            </div>
+        </div>
+    </template>
+    
     <!-- ========================================================================= -->
     <!-- JAVASCRIPT FÜR LADEANIMATION, CHAT-LOGIK & MULTIPLE FENSTER -->
     <!-- ========================================================================= -->
@@ -827,6 +864,7 @@
         const desktop = document.getElementById('desktop');
         const consoleIcon = document.getElementById('console-icon');
         const chessIcon = document.getElementById('chess-icon');
+        const replayIcon = document.getElementById('replay-icon');
 
         // === API-Konstanten und Chat-Status ===
         const apiKey = "AIzaSyB-0z8e59quUM-EaRl0tGiK-5eVaSUq3dQ";
@@ -835,274 +873,21 @@
         // =========================================================================
         // THREE.JS SETUP FÜR 3D-LADEANIMATION
         // =========================================================================
+        // AN DIESEM TEIL WURDE NICHTS GEÄNDERT, UM DIE STARTANIMATION ZU ERHALTEN
         let scene, camera, renderer, particles, particleMaterial, stars;
         let wireframeGlobe;
-
         const particleInfo = [];
         const chaosBounds = 10;
         const sphereRadius = 2.0;
         const particleCount = 3500;
-
         let animationPhase = 'chaos';
         let clock, phaseStartTime, orbitStartTime;
-
-        /**
-         * Initialisiert die three.js-Szene und erstellt die 3D-Objekte.
-         */
-        function init3D() {
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 2000);
-            camera.position.z = 9.5;
-
-            renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            sphereContainer.appendChild(renderer.domElement);
-
-            const globeGeometry = new THREE.IcosahedronGeometry(sphereRadius, 4);
-            const globeMaterial = new THREE.MeshBasicMaterial({
-                color: 0x00ff00,
-                wireframe: true,
-                transparent: true,
-                opacity: 0.0
-            });
-            wireframeGlobe = new THREE.Mesh(globeGeometry, globeMaterial);
-            scene.add(wireframeGlobe);
-
-            const positions = new Float32Array(particleCount * 3);
-            const tempSphere = new THREE.SphereGeometry(sphereRadius, 32, 32);
-            const surfaceVerts = tempSphere.attributes.position.array;
-
-            for (let i = 0; i < particleCount; i++) {
-                const x = (Math.random() - 0.5) * chaosBounds * 2;
-                const y = (Math.random() - 0.5) * chaosBounds * 2;
-                const z = (Math.random() - 0.5) * chaosBounds * 2;
-                positions[i * 3] = x; positions[i * 3 + 1] = y; positions[i * 3 + 2] = z;
-
-                const vi = Math.floor(Math.random() * (surfaceVerts.length / 3));
-                const target = new THREE.Vector3(
-                    surfaceVerts[vi * 3],
-                    surfaceVerts[vi * 3 + 1],
-                    surfaceVerts[vi * 3 + 2]
-                );
-
-                const innerScale = 0.28 + Math.random() * 0.32;
-                const innerTarget = target.clone().multiplyScalar(innerScale);
-
-                const velocity = new THREE.Vector3(
-                    (Math.random() - 0.5) * 0.04,
-                    (Math.random() - 0.5) * 0.04,
-                    (Math.random() - 0.5) * 0.04
-                );
-
-                particleInfo.push({
-                    target,
-                    innerTarget,
-                    velocity,
-                    state: 'idle',
-                    stagingPoint: null
-                });
-            }
-
-            const geometry = new THREE.BufferGeometry();
-            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            particleMaterial = new THREE.PointsMaterial({color: 0x00ff00, size: 0.03, transparent: true, opacity: 0.9});
-            particles = new THREE.Points(geometry, particleMaterial);
-            scene.add(particles);
-
-            const starsGeo = new THREE.BufferGeometry();
-            const starPositions = [];
-            for (let i = 0; i < 3000; i++) {
-                starPositions.push((Math.random() - 0.5) * 2000, (Math.random() - 0.5) * 2000, (Math.random() - 0.5) * 2000);
-            }
-            starsGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPositions, 3));
-            const starsMat = new THREE.PointsMaterial({color: 0x00ff00, size: 1.5, transparent: true, opacity: 0.45});
-            stars = new THREE.Points(starsGeo, starsMat);
-            scene.add(stars);
-
-            clock = new THREE.Clock();
-            phaseStartTime = clock.getElapsedTime();
-
-            window.addEventListener('resize', onWindowResize);
-        }
-
-        /**
-         * Animationsschleife für die 3D-Szene.
-         */
-        function animate3D() {
-            requestAnimationFrame(animate3D);
-            const dt = clock.getDelta();
-            const t = clock.getElapsedTime();
-
-            const positions = particles.geometry.attributes.position.array;
-
-            switch (animationPhase) {
-                case 'chaos':
-                    for (let i = 0; i < particleCount; i++) {
-                        positions[i * 3] += particleInfo[i].velocity.x;
-                        positions[i * 3 + 1] += particleInfo[i].velocity.y;
-                        positions[i * 3 + 2] += particleInfo[i].velocity.z;
-
-                        if (Math.abs(positions[i * 3]) > chaosBounds) particleInfo[i].velocity.x *= -1;
-                        if (Math.abs(positions[i * 3 + 1]) > chaosBounds) particleInfo[i].velocity.y *= -1;
-                        if (Math.abs(positions[i * 3 + 2]) > chaosBounds) particleInfo[i].velocity.z *= -1;
-                    }
-                    if (t - phaseStartTime > 2.8) {
-                        animationPhase = 'converging';
-                        phaseStartTime = t;
-                    }
-                    break;
-
-                case 'converging':
-                    let settledCount = 0;
-                    for (let i = 0; i < particleCount; i++) {
-                        const px = positions[i * 3], py = positions[i * 3 + 1], pz = positions[i * 3 + 2];
-                        const p = new THREE.Vector3(px, py, pz);
-                        const target = particleInfo[i].target;
-
-                        p.lerp(target, 0.045 + Math.random() * 0.01);
-                        positions[i * 3] = p.x; positions[i * 3 + 1] = p.y; positions[i * 3 + 2] = p.z;
-                        if (p.distanceTo(target) < 0.09) settledCount++;
-                    }
-                    const settledPerc = settledCount / particleCount;
-                    wireframeGlobe.material.opacity = Math.min(1, settledPerc * 1.6);
-                    if (settledPerc > 0.96 || (clock.getElapsedTime() - phaseStartTime > 7.5)) {
-                        prepareXInflow();
-                        animationPhase = 'xInflow';
-                        phaseStartTime = clock.getElapsedTime();
-                    }
-                    break;
-
-                case 'xInflow':
-                    let inflowSettled = 0;
-                    for (let i = 0; i < particleCount; i++) {
-                        const idx = i * 3;
-                        const p = new THREE.Vector3(positions[idx], positions[idx + 1], positions[idx + 2]);
-                        const info = particleInfo[i];
-                        const dist = p.length();
-                        if (!info.state || info.state === 'idle') {
-                            if (dist > sphereRadius + 0.06) {
-                                info.state = 'toStaging';
-                                info.stagingPoint = computeStagingPoint(p);
-                            } else {
-                                info.state = 'toInner';
-                            }
-                        }
-                        if (info.state === 'toStaging') {
-                            const sp = info.stagingPoint;
-                            p.lerp(sp, 0.10 + Math.random() * 0.03);
-                            positions[idx] = p.x; positions[idx + 1] = p.y; positions[idx + 2] = p.z;
-                            if (p.distanceTo(sp) < 0.12) {
-                                info.state = 'toInner';
-                            }
-                        } else if (info.state === 'toInner') {
-                            const inner = info.innerTarget;
-                            const toInner = inner.clone().sub(p);
-                            const swirl = new THREE.Vector3(-toInner.y, toInner.x, toInner.z * 0.08).multiplyScalar(0.004 + (i % 7) * 0.0002);
-                            p.add(swirl);
-                            p.lerp(inner, 0.038 + Math.random() * 0.012);
-                            positions[idx] = p.x; positions[idx + 1] = p.y; positions[idx + 2] = p.z;
-                            if (p.distanceTo(inner) < 0.055) {
-                                info.state = 'settled';
-                            }
-                        } else if (info.state === 'settled') {
-                            inflowSettled++;
-                        }
-                    }
-                    wireframeGlobe.material.opacity = Math.max(0.18, 1.0 - inflowSettled / particleCount * 0.9);
-                    if (inflowSettled / particleCount > 0.98 || (clock.getElapsedTime() - phaseStartTime > 12.0)) {
-                        animationPhase = 'orbit';
-                        orbitStartTime = clock.getElapsedTime();
-                        phaseStartTime = clock.getElapsedTime();
-                    }
-                    break;
-
-                case 'orbit':
-                    const elapsedOrbit = (clock.getElapsedTime() - orbitStartTime);
-                    let doneCount = 0;
-                    for (let i = 0; i < particleCount; i++) {
-                        const idx = i * 3;
-                        const p = new THREE.Vector3(positions[idx], positions[idx + 1], positions[idx + 2]);
-                        const baseAngle = (i / particleCount) * Math.PI * 2;
-                        const angle = baseAngle + elapsedOrbit * 0.6 + (i % 137) * 0.003;
-                        const orbitRadius = sphereRadius * (1.6 + 0.6 * Math.sin(elapsedOrbit * 0.9 + i * 0.017));
-                        const ox = Math.cos(angle) * orbitRadius;
-                        const oz = Math.sin(angle) * orbitRadius;
-                        const oy = Math.sin(angle * 2 + i * 0.01) * 0.55;
-                        const orbitTarget = new THREE.Vector3(ox, oy, oz);
-                        p.lerp(orbitTarget, 0.06 + (i % 11) * 0.0014);
-                        positions[idx] = p.x; positions[idx + 1] = p.y; positions[idx + 2] = p.z;
-                        if (p.length() > sphereRadius * 1.55) doneCount++;
-                    }
-                    wireframeGlobe.material.opacity = 0.95;
-                    if (doneCount / particleCount > 0.98) {
-                        // Finale Phase erreicht, bleibt in diesem Zustand
-                    }
-                    break;
-            }
-
-            wireframeGlobe.rotation.y += 0.0025;
-            if (stars) stars.rotation.y += 0.0001;
-
-            particles.geometry.attributes.position.needsUpdate = true;
-            renderer.render(scene, camera);
-        }
-
-        /**
-         * Bereitet Partikel auf die X-Inflow-Phase vor.
-         */
-        function prepareXInflow() {
-            for (let i = 0; i < particleCount; i++) {
-                const idx = i * 3;
-                const pos = new THREE.Vector3(
-                    particles.geometry.attributes.position.array[idx],
-                    particles.geometry.attributes.position.array[idx + 1],
-                    particles.geometry.attributes.position.array[idx + 2]
-                );
-                const dist = pos.length();
-                if (dist > sphereRadius + 0.06) {
-                    particleInfo[i].state = 'toStaging';
-                    particleInfo[i].stagingPoint = computeStagingPoint(pos);
-                } else {
-                    particleInfo[i].state = 'toInner';
-                    particleInfo[i].stagingPoint = null;
-                }
-            }
-        }
-
-        /**
-         * Berechnet den Staging-Punkt für die X-Inflow-Animation.
-         */
-        function computeStagingPoint(currentPos) {
-            const diags = [
-                new THREE.Vector3(1, 1, 0).normalize(),
-                new THREE.Vector3(-1, 1, 0).normalize(),
-                new THREE.Vector3(1, -1, 0).normalize(),
-                new THREE.Vector3(-1, -1, 0).normalize()
-            ];
-            const proj = new THREE.Vector3(currentPos.x, currentPos.y, 0);
-            let bestIdx = 0;
-            let bestDot = -Infinity;
-            const projNorm = proj.length() > 0.0001 ? proj.clone().normalize() : new THREE.Vector3(1, 1, 0).normalize();
-            for (let j = 0; j < diags.length; j++) {
-                const d = diags[j];
-                const dot = projNorm.dot(d);
-                if (dot > bestDot) {bestDot = dot; bestIdx = j;}
-            }
-            const dist = sphereRadius * (1.25 + Math.random() * 0.45);
-            const base = diags[bestIdx].clone().multiplyScalar(dist);
-            const zVar = (currentPos.z * 0.18) + (Math.random() - 0.5) * 0.35;
-            base.z = zVar;
-            return base;
-        }
-
-        function onWindowResize() {
-            const w = window.innerWidth, h = window.innerHeight;
-            camera.aspect = w / h;
-            camera.updateProjectionMatrix();
-            renderer.setSize(w, h);
-        }
-
+        function init3D(){scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(70,window.innerWidth/window.innerHeight,0.1,2000);camera.position.z=9.5;renderer=new THREE.WebGLRenderer({antialias:!0,alpha:!0});renderer.setSize(window.innerWidth,window.innerHeight);renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));sphereContainer.appendChild(renderer.domElement);const globeGeometry=new THREE.IcosahedronGeometry(sphereRadius,4);const globeMaterial=new THREE.MeshBasicMaterial({color:0x00ff00,wireframe:!0,transparent:!0,opacity:0.0});wireframeGlobe=new THREE.Mesh(globeGeometry,globeMaterial);scene.add(wireframeGlobe);const positions=new Float32Array(particleCount*3);const tempSphere=new THREE.SphereGeometry(sphereRadius,32,32);const surfaceVerts=tempSphere.attributes.position.array;for(let i=0;i<particleCount;i++){const x=(Math.random()-.5)*chaosBounds*2;const y=(Math.random()-.5)*chaosBounds*2;const z=(Math.random()-.5)*chaosBounds*2;positions[i*3]=x;positions[i*3+1]=y;positions[i*3+2]=z;const vi=Math.floor(Math.random()*(surfaceVerts.length/3));const target=new THREE.Vector3(surfaceVerts[vi*3],surfaceVerts[vi*3+1],surfaceVerts[vi*3+2]);const innerScale=.28+Math.random()*.32;const innerTarget=target.clone().multiplyScalar(innerScale);const velocity=new THREE.Vector3((Math.random()-.5)*.04,(Math.random()-.5)*.04,(Math.random()-.5)*.04);particleInfo.push({target,innerTarget,velocity,state:'idle',stagingPoint:null})}const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));particleMaterial=new THREE.PointsMaterial({color:0x00ff00,size:.03,transparent:!0,opacity:.9});particles=new THREE.Points(geometry,particleMaterial);scene.add(particles);const starsGeo=new THREE.BufferGeometry();const starPositions=[];for(let i=0;i<3000;i++){starPositions.push((Math.random()-.5)*2000,(Math.random()-.5)*2000,(Math.random()-.5)*2000)}starsGeo.setAttribute('position',new THREE.Float32BufferAttribute(starPositions,3));const starsMat=new THREE.PointsMaterial({color:0x00ff00,size:1.5,transparent:!0,opacity:.45});stars=new THREE.Points(starsGeo,starsMat);scene.add(stars);clock=new THREE.Clock();phaseStartTime=clock.getElapsedTime();window.addEventListener('resize',onWindowResize)}
+        function animate3D(){requestAnimationFrame(animate3D);const dt=clock.getDelta();const t=clock.getElapsedTime();const positions=particles.geometry.attributes.position.array;switch(animationPhase){case'chaos':for(let i=0;i<particleCount;i++){positions[i*3]+=particleInfo[i].velocity.x;positions[i*3+1]+=particleInfo[i].velocity.y;positions[i*3+2]+=particleInfo[i].velocity.z;if(Math.abs(positions[i*3])>chaosBounds)particleInfo[i].velocity.x*=-1;if(Math.abs(positions[i*3+1])>chaosBounds)particleInfo[i].velocity.y*=-1;if(Math.abs(positions[i*3+2])>chaosBounds)particleInfo[i].velocity.z*=-1}if(t-phaseStartTime>2.8){animationPhase='converging';phaseStartTime=t}break;case'converging':let settledCount=0;for(let i=0;i<particleCount;i++){const px=positions[i*3],py=positions[i*3+1],pz=positions[i*3+2];const p=new THREE.Vector3(px,py,pz);const target=particleInfo[i].target;p.lerp(target,.045+Math.random()*.01);positions[i*3]=p.x;positions[i*3+1]=p.y;positions[i*3+2]=p.z;if(p.distanceTo(target)<.09)settledCount++}const settledPerc=settledCount/particleCount;wireframeGlobe.material.opacity=Math.min(1,settledPerc*1.6);if(settledPerc>.96||(clock.getElapsedTime()-phaseStartTime>7.5)){prepareXInflow();animationPhase='xInflow';phaseStartTime=clock.getElapsedTime()}break;case'xInflow':let inflowSettled=0;for(let i=0;i<particleCount;i++){const idx=i*3;const p=new THREE.Vector3(positions[idx],positions[idx+1],positions[idx+2]);const info=particleInfo[i];const dist=p.length();if(!info.state||info.state==='idle'){if(dist>sphereRadius+.06){info.state='toStaging';info.stagingPoint=computeStagingPoint(p)}else{info.state='toInner'}}if(info.state==='toStaging'){const sp=info.stagingPoint;p.lerp(sp,.10+Math.random()*.03);positions[idx]=p.x;positions[idx+1]=p.y;positions[idx+2]=p.z;if(p.distanceTo(sp)<.12){info.state='toInner'}}else if(info.state==='toInner'){const inner=info.innerTarget;const toInner=inner.clone().sub(p);const swirl=new THREE.Vector3(-toInner.y,toInner.x,toInner.z*.08).multiplyScalar(.004+(i%7)*.0002);p.add(swirl);p.lerp(inner,.038+Math.random()*.012);positions[idx]=p.x;positions[idx+1]=p.y;positions[idx+2]=p.z;if(p.distanceTo(inner)<.055){info.state='settled'}}else if(info.state==='settled'){inflowSettled++}}wireframeGlobe.material.opacity=Math.max(.18,1.0-inflowSettled/particleCount*.9);if(inflowSettled/particleCount>.98||(clock.getElapsedTime()-phaseStartTime>12.0)){animationPhase='orbit';orbitStartTime=clock.getElapsedTime();phaseStartTime=clock.getElapsedTime()}break;case'orbit':const elapsedOrbit=(clock.getElapsedTime()-orbitStartTime);let doneCount=0;for(let i=0;i<particleCount;i++){const idx=i*3;const p=new THREE.Vector3(positions[idx],positions[idx+1],positions[idx+2]);const baseAngle=(i/particleCount)*Math.PI*2;const angle=baseAngle+elapsedOrbit*.6+(i%137)*.003;const orbitRadius=sphereRadius*(1.6+.6*Math.sin(elapsedOrbit*.9+i*.017));const ox=Math.cos(angle)*orbitRadius;const oz=Math.sin(angle)*orbitRadius;const oy=Math.sin(angle*2+i*.01)*.55;const orbitTarget=new THREE.Vector3(ox,oy,oz);p.lerp(orbitTarget,.06+(i%11)*.0014);positions[idx]=p.x;positions[idx+1]=p.y;positions[idx+2]=p.z;if(p.length()>sphereRadius*1.55)doneCount++}wireframeGlobe.material.opacity=.95;if(doneCount/particleCount>.98){}break}wireframeGlobe.rotation.y+=.0025;if(stars)stars.rotation.y+=.0001;particles.geometry.attributes.position.needsUpdate=!0;renderer.render(scene,camera)}
+        function prepareXInflow(){for(let i=0;i<particleCount;i++){const idx=i*3;const pos=new THREE.Vector3(particles.geometry.attributes.position.array[idx],particles.geometry.attributes.position.array[idx+1],particles.geometry.attributes.position.array[idx+2]);const dist=pos.length();if(dist>sphereRadius+.06){particleInfo[i].state='toStaging';particleInfo[i].stagingPoint=computeStagingPoint(pos)}else{particleInfo[i].state='toInner';particleInfo[i].stagingPoint=null}}}
+        function computeStagingPoint(currentPos){const diags=[new THREE.Vector3(1,1,0).normalize(),new THREE.Vector3(-1,1,0).normalize(),new THREE.Vector3(1,-1,0).normalize(),new THREE.Vector3(-1,-1,0).normalize()];const proj=new THREE.Vector3(currentPos.x,currentPos.y,0);let bestIdx=0;let bestDot=-Infinity;const projNorm=proj.length()>.0001?proj.clone().normalize():new THREE.Vector3(1,1,0).normalize();for(let j=0;j<diags.length;j++){const d=diags[j];const dot=projNorm.dot(d);if(dot>bestDot){bestDot=dot;bestIdx=j}}const dist=sphereRadius*(1.25+Math.random()*.45);const base=diags[bestIdx].clone().multiplyScalar(dist);const zVar=(currentPos.z*.18)+(Math.random()-.5)*.35;base.z=zVar;return base}
+        function onWindowResize(){const w=window.innerWidth,h=window.innerHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)}
+        
         // =========================================================================
         // CHAT-LOGIK
         // =========================================================================
@@ -1167,101 +952,85 @@
         }
 
         // =========================================================================
-        // MEHRFACHTERMINAL-LOGIK
+        // MEHRFACHFENSTER-LOGIK
         // =========================================================================
         let windowCounter = 0;
 
-        /**
-         * Erstellt ein neues Fenster.
-         */
-            function createWindow(title, contentHTML, initialSize = {width: '700px', height: '500px'}) {
-                windowCounter++;
-                const windowId = `window-${windowCounter}`;
+        function createWindow(title, contentHTML, initialSize = {width: '700px', height: '500px'}) {
+            windowCounter++;
+            const windowId = `window-${windowCounter}`;
 
-                const newWindow = document.createElement('div');
-                newWindow.id = windowId;
-                newWindow.className = 'terminal-window';
+            const newWindow = document.createElement('div');
+            newWindow.id = windowId;
+            newWindow.className = 'terminal-window';
+            newWindow.style.zIndex = ++highestZIndex;
+            newWindow.style.width = initialSize.width;
+            newWindow.style.height = initialSize.height;
+
+            // Positionierung leicht versetzt
+            const offsetX = 50 + (windowCounter * 20) % (window.innerWidth - 800);
+            const offsetY = 50 + (windowCounter * 20) % (window.innerHeight - 600);
+            newWindow.style.left = `${offsetX}px`;
+            newWindow.style.top = `${offsetY}px`;
+
+            newWindow.innerHTML = `
+                <div class="terminal-header">
+                    <h2>${title}</h2>
+                    <button class="close-btn">[ x ]</button>
+                </div>
+                ${contentHTML}
+            `;
+
+            document.body.appendChild(newWindow);
+            desktop.style.display = 'none';
+            newTerminalBtn.style.display = 'block';
+
+            const header = newWindow.querySelector('.terminal-header');
+            const closeBtn = newWindow.querySelector('.close-btn');
+
+            newWindow.addEventListener('mousedown', () => {
                 newWindow.style.zIndex = ++highestZIndex;
-                newWindow.style.width = initialSize.width;
-                newWindow.style.height = initialSize.height;
+            });
 
-                const offsetX = 50 + (windowCounter * 20);
-                const offsetY = 50 + (windowCounter * 20);
-                newWindow.style.left = `${offsetX}px`;
-                newWindow.style.top = `${offsetY}px`;
+            let isDragging = false;
+            let dragOffsetX, dragOffsetY;
 
-                newWindow.innerHTML = `
-                    <div class="terminal-header">
-                        <h2>${title} ${windowCounter}</h2>
-                        <button class="close-btn">[ x ]</button>
-                    </div>
-                    ${contentHTML}
-                `;
+            header.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                dragOffsetX = e.clientX - newWindow.offsetLeft;
+                dragOffsetY = e.clientY - newWindow.offsetTop;
+                header.style.cursor = 'grabbing';
+                document.body.style.userSelect = 'none'; 
+            });
 
-                document.body.appendChild(newWindow);
-
-                // === Desktop ausblenden beim Öffnen ===
-                const desktop = document.getElementById('desktop');
-                if (desktop) {
-                    desktop.style.display = 'none';
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const newX = e.clientX - dragOffsetX;
+                    const newY = e.clientY - dragOffsetY;
+                    newWindow.style.left = `${newX}px`;
+                    newWindow.style.top = `${newY}px`;
                 }
+            });
 
-                const header = newWindow.querySelector('.terminal-header');
-                const closeBtn = newWindow.querySelector('.close-btn');
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    header.style.cursor = 'grab';
+                    document.body.style.userSelect = 'auto';
+                }
+            });
 
-                newWindow.addEventListener('mousedown', () => {
-                    newWindow.style.zIndex = ++highestZIndex;
-                });
+            closeBtn.addEventListener('click', () => {
+                newWindow.remove();
+                if (document.querySelectorAll('.terminal-window').length === 0) {
+                    desktop.style.display = 'flex';
+                    newTerminalBtn.style.display = 'none';
+                }
+            });
 
-                let isDragging = false;
-                let offsetX_drag, offsetY_drag;
-
-                header.addEventListener('mousedown', (e) => {
-                    isDragging = true;
-                    offsetX_drag = e.clientX - newWindow.offsetLeft;
-                    offsetY_drag = e.clientY - newWindow.offsetTop;
-                    header.style.cursor = 'grabbing';
-                    document.body.style.userSelect = 'none'; 
-                });
-
-                document.addEventListener('mousemove', (e) => {
-                    if (isDragging) {
-                        const newX = e.clientX - offsetX_drag;
-                        const newY = e.clientY - offsetY_drag;
-                        newWindow.style.left = `${newX}px`;
-                        newWindow.style.top = `${newY}px`;
-                    }
-                });
-
-                document.addEventListener('mouseup', () => {
-                    if (isDragging) {
-                        isDragging = false;
-                        header.style.cursor = 'grab';
-                        document.body.style.userSelect = 'auto';
-                    }
-                });
-
-                // === Close-Button mit Desktop-Rückkehr ===
-                closeBtn.addEventListener('click', () => {
-                    newWindow.remove();
-
-                    // Desktop nur anzeigen, wenn kein anderes Fenster mehr offen ist
-                    if (document.querySelectorAll('.terminal-window').length === 0) {
-                        if (desktop) {
-                            desktop.style.display = 'block';
-                        }
-                    }
-                });
-
-                return newWindow;
-            }
-
-
-
-
-        /**
-         * Erstellt ein neues Terminal-Fenster.
-         */
+            return newWindow;
+        }
+        
         function createTerminalWindow() {
             const terminalContent = `
                 <div class="terminal-output">
@@ -1278,22 +1047,16 @@
             const userInput = terminalWindow.querySelector('.terminal-input');
             const sendBtn = terminalWindow.querySelector('.sendBtn');
 
-            sendBtn.addEventListener('click', () => {
-                sendMessage(terminalWindow.id);
-            });
+            sendBtn.addEventListener('click', () => sendMessage(terminalWindow.id));
             userInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    sendMessage(terminalWindow.id);
-                }
+                if (e.key === 'Enter') sendMessage(terminalWindow.id);
             });
-
             userInput.focus();
         }
 
         // =========================================================================
         // ROBUSTER SKRIPT-LADER UND SCHACH-LOGIK
         // =========================================================================
-        
         let chessScriptsLoaded = false;
 
         function loadScript(src) {
@@ -1309,352 +1072,438 @@
                 document.head.appendChild(script);
             });
         }
+        
+        // Globale Schachfiguren-Bilder
+        const pieceImages = {
+            'w': {'p':'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg','r':'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg','n':'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg','b':'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg','q':'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg','k':'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg'},
+            'b': {'p':'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg','r':'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg','n':'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg','b':'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg','q':'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg','k':'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg'}
+        };
 
         async function createChessWindow() {
-            const initialContent = `
-                <div class="chess-board-container" style="text-align: center; font-size: 1.5rem; padding: 40px;">
-                    <p>Lade Schach-Module...</p>
+          const initialContent = `<div class="chess-board-container" style="text-align: center; font-size: 1.5rem; padding: 40px;"><p>Lade Schach-Module...</p></div>`;
+          const chessWindow = createWindow('Schach vs. Stockfish', initialContent, { width: 'auto', height: 'auto' });
+          chessWindow.classList.add('chess-window');
+          chessWindow.style.resize = 'none';
+
+          const loaderDiv = chessWindow.querySelector('.chess-board-container');
+          try {
+            if (!chessScriptsLoaded) {
+              await loadScript("https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js");
+              chessScriptsLoaded = true;
+            }
+          } catch (error) {
+            console.error(error);
+            loaderDiv.innerHTML = '<p style="color: #FF0000;">Fehler beim Laden der Engine.</p>';
+            return;
+          }
+
+          const gameContentHTML = `
+            <div id="thinking-indicator">Stockfish denkt nach...</div>
+            <div class="chess-board-container">
+              <div class="chess-topbar">
+                <div id="chess-status" class="chess-status">Weiß am Zug</div>
+                <div class="chess-controls-right">
+                  <div class="elo-control">
+                    <label for="elo-slider">ELO: <span id="elo-value">1350</span></label>
+                    <input type="range" id="elo-slider" min="0" max="40" value="10" title="Stockfish Skill Level">
+                  </div>
                 </div>
-            `;
-            const chessWindow = createWindow('Schach vs. Stockfish', initialContent, { width: 'auto', height: 'auto' });
-
-            // --- window fit helper: passt Fenster so an, dass Header + quadratisches Brett komplett sichtbar sind
-            function fitChessWindow(win) {
-              const header = win.querySelector('.terminal-header');
-              const headerH = header ? header.offsetHeight : 60;
-
-              const boardContainer = win.querySelector('.chess-board-container');
-              if (boardContainer) {
-                boardContainer.style.padding = '0';
-                boardContainer.style.boxSizing = 'border-box';
-                boardContainer.style.width = '100%';
-                boardContainer.style.height = '100%';
-                boardContainer.style.overflow = 'hidden';
-                boardContainer.style.display = 'flex';
-                boardContainer.style.flexDirection = 'column';
-                boardContainer.style.alignItems = 'stretch';
-              }
-
-              const boardEl = win.querySelector('.chess-board');
-              if (boardEl) {
-                boardEl.style.width = '100%';
-                boardEl.style.height = '100%';
-                boardEl.style.boxSizing = 'border-box';
-              }
-
-              const paddingForWindow = 40;
-              const maxWidthAvailable = window.innerWidth - paddingForWindow;
-              const maxHeightAvailable = window.innerHeight - paddingForWindow - headerH;
-              const boardSize = Math.max(160, Math.min(maxWidthAvailable, maxHeightAvailable));
-
-              win.style.width = boardSize + 'px';
-              win.style.height = (boardSize + headerH) + 'px';
-
-              win.style.left = '50%';
-              win.style.top = '50%';
-              win.style.transform = 'translate(-50%, -50%)';
-
-              win.style.overflow = 'hidden';
-              win.style.resize = 'none';
-            }
-
-            fitChessWindow(chessWindow);
-            (function attachResizeListener(win) {
-              const handler = () => fitChessWindow(win);
-              window.addEventListener('resize', handler);
-            })(chessWindow);
-
-            // --- load chess.js once (keeps existing logic)
-            const loaderDiv = chessWindow.querySelector('.chess-board-container');
-            try {
-                if (!chessScriptsLoaded) {
-                    loaderDiv.innerHTML = "<p style='color:#00FF00;'>Lade Schach-Module...</p>";
-                    await loadScript("https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js");
-                    chessScriptsLoaded = true;
-                }
-                loaderDiv.innerHTML = "<p style='color:#00FF00;'>Module wurden geladen ✅</p>";
-                setTimeout(() => loaderDiv.remove(), 1500);
-            } catch (error) {
-                console.error(error);
-                loaderDiv.innerHTML = '<p style="color: #FF0000;">Fehler beim Laden der Engine.</p>';
-                return;
-            }
-
-            // --- insert game UI
-            const gameContentHTML = `
-                <div id="thinking-indicator" style="display:none;">Stockfish denkt nach...</div>
-                <div class="chess-board-container">
-                    <div class="chess-topbar">
-                        <div id="chess-status" class="chess-status">Weiß am Zug</div>
-                        <div class="chess-controls-right">
-                            <div class="elo-control">
-                                <label for="elo-slider">ELO: <span id="elo-value">1350</span></label>
-                                <input type="range" id="elo-slider" min="0" max="40" value="10" title="Stockfish Skill Level">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="chess-board"></div>
-                    <div class="chess-control">
-                        <button id="new-game-btn">[ ♻ Neues Spiel ]</button>
-                    </div>
+              </div>
+              <div class="chess-board"></div>
+              <div class="chess-control">
+                <button id="new-game-btn" class="hacker-btn">[ ♻ Neues Spiel ]</button>
+              </div>
+            </div>
+            <div id="promotion-modal" class="promotion-modal" aria-hidden="true">
+              <div class="promotion-box">
+                <div class="promotion-title">Bauernumwandlung</div>
+                <div class="promotion-options">
+                  <button class="promote-btn" data-piece="q">♕ Dame</button> <button class="promote-btn" data-piece="r">♖ Turm</button> <button class="promote-btn" data-piece="b">♗ Läufer</button> <button class="promote-btn" data-piece="n">♘ Springer</button>
                 </div>
-                <div id="promotion-modal" class="promotion-modal hidden" aria-hidden="true">
-                    <div class="promotion-box">
-                        <div class="promotion-title">Bauernumwandlung</div>
-                        <div class="promotion-options">
-                            <button class="promote-btn" data-piece="q">♕ Dame</button>
-                            <button class="promote-btn" data-piece="r">♖ Turm</button>
-                            <button class="promote-btn" data-piece="b">♗ Läufer</button>
-                            <button class="promote-btn" data-piece="n">♘ Springer</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            chessWindow.querySelector('.terminal-header').insertAdjacentHTML('afterend', gameContentHTML);
+              </div>
+            </div>
+          `;
+          loaderDiv.remove();
+          chessWindow.querySelector('.terminal-header').insertAdjacentHTML('afterend', gameContentHTML);
+          
+          let game = new Chess();
+          let stockfish = new Worker("js/stockfish.js");
+          let gameHistory = [];
+          let selectedSquare = null;
+          let pendingPromotion = null;
+          let isGameOver = false;
 
-            // --- references
-            const boardDiv = chessWindow.querySelector('.chess-board');
-            const statusDiv = chessWindow.querySelector('#chess-status');
-            const newGameBtn = chessWindow.querySelector('#new-game-btn');
-            const thinkingIndicator = chessWindow.querySelector('#thinking-indicator');
-            const promotionModal = chessWindow.querySelector('#promotion-modal');
-            const eloSlider = chessWindow.querySelector('#elo-slider');
-            const eloValueSpan = chessWindow.querySelector('#elo-value');
+          const boardDiv = chessWindow.querySelector('.chess-board');
+          const statusDiv = chessWindow.querySelector('#chess-status');
+          const newGameBtn = chessWindow.querySelector('#new-game-btn');
+          const thinkingIndicator = chessWindow.querySelector('#thinking-indicator');
+          const promotionModal = chessWindow.querySelector('#promotion-modal');
+          const eloSlider = chessWindow.querySelector('#elo-slider');
+          const eloValueSpan = chessWindow.querySelector('#elo-value');
 
-            // --- piece images (SVG links)
-            const pieceImages = {
-              'w': {
-                'p': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg',
-                'r': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg',
-                'n': 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg',
-                'b': 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg',
-                'q': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg',
-                'k': 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg'
-              },
-              'b': {
-                'p': 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg',
-                'r': 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
-                'n': 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg',
-                'b': 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg',
-                'q': 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg',
-                'k': 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg'
+          function renderBoard() {
+            boardDiv.innerHTML = '';
+            const boardData = game.board();
+            const history = game.history({ verbose: true });
+            const lastMove = history.length > 0 ? history[history.length - 1] : null;
+
+            for (let row = 0; row < 8; row++) {
+              for (let col = 0; col < 8; col++) {
+                const squareEl = document.createElement('div');
+                const isLight = (row + col) % 2 === 0;
+                squareEl.classList.add('chess-square', isLight ? 'light' : 'dark');
+                const squareName = String.fromCharCode('a'.charCodeAt(0) + col) + (8 - row);
+                squareEl.dataset.square = squareName;
+
+                if (lastMove) {
+                  if (lastMove.from === squareName) squareEl.classList.add('last-move-from');
+                  if (lastMove.to === squareName) squareEl.classList.add('last-move-to');
+                }
+
+                const piece = boardData[row][col];
+                if (piece) {
+                  const img = document.createElement('img');
+                  img.src = pieceImages[piece.color][piece.type];
+                  img.className = 'chess-piece-img';
+                  squareEl.appendChild(img);
+                }
+                squareEl.addEventListener('click', handleSquareClick);
+                boardDiv.appendChild(squareEl);
               }
-            };
-            function createPieceImage(color, type) {
-              const img = document.createElement('img');
-              img.src = pieceImages[color][type];
-              img.alt = (color === 'w' ? 'white-' : 'black-') + type;
-              img.className = 'chess-piece-img';
-              return img;
             }
+          }
 
-            // --- game + engine
-            let game = new Chess();
-            let stockfish = new Worker("js/stockfish.js");
+          function updateStatus() {
+            let statusText = game.turn() === 'w' ? 'Weiß am Zug' : 'Schwarz (Bot) am Zug';
+            if (game.in_checkmate()) statusText = `Schachmatt! ${game.turn() === 'w' ? 'Schwarz' : 'Weiß'} gewinnt.`;
+            else if (game.in_stalemate() || game.in_threefold_repetition() || game.in_draw()) statusText = 'Patt! Unentschieden.';
+            else if (game.in_check()) statusText += ' (im Schach)';
+            statusDiv.textContent = statusText;
+          }
+          
+          function handleSquareClick(event) {
+            if (game.turn() !== 'w' || game.game_over() || isGameOver) return;
+            const clickedSquareName = event.currentTarget.dataset.square;
 
-            // engine speed options
-            const hwThreads = Math.max(1, Math.min(4, navigator.hardwareConcurrency || 2));
-            try { stockfish.postMessage(`setoption name Threads value ${hwThreads}`); } catch(e){}
-            try { stockfish.postMessage(`setoption name Hash value 64`); } catch(e){}
+            if (selectedSquare) {
+              const from = selectedSquare.dataset.square;
+              const to = clickedSquareName;
+              const move = game.moves({ square: from, verbose: true }).find(m => m.to === to);
 
-            function computeMoveTimeFromSlider(sliderVal) {
-              const minMS = 80;
-              const maxMS = 1500;
-              const t = Math.max(0, Math.min(40, sliderVal)) / 40;
-              const scaled = minMS + (maxMS - minMS) * (t * t);
-              return Math.round(scaled);
-            }
-
-            // --- replay history (optional baseline)
-            const gameHistory = []; // will store FENs after moves
-
-            let selectedSquare = null;
-            let pendingPromotion = null;
-
-            // --- render board (uses SVG images)
-            function renderBoard() {
-              boardDiv.innerHTML = '';
-              const boardData = game.board();
-              const history = game.history({ verbose: true });
-              const lastMove = history.length > 0 ? history[history.length - 1] : null;
-
-              for (let row = 0; row < 8; row++) {
-                for (let col = 0; col < 8; col++) {
-                  const squareEl = document.createElement('div');
-                  const isLight = (row + col) % 2 === 0;
-                  squareEl.classList.add('chess-square', isLight ? 'light' : 'dark');
-                  const squareName = String.fromCharCode('a'.charCodeAt(0) + col) + (8 - row);
-                  squareEl.dataset.square = squareName;
-
-                  if (lastMove) {
-                    if (lastMove.from === squareName) squareEl.classList.add('last-move-from');
-                    if (lastMove.to === squareName) squareEl.classList.add('last-move-to');
-                  }
-
-                  const piece = boardData[row][col];
-                  if (piece) {
-                    const img = createPieceImage(piece.color, piece.type);
-                    squareEl.appendChild(img);
-                  }
-                  squareEl.addEventListener('click', handleSquareClick);
-                  boardDiv.appendChild(squareEl);
+              if (move) {
+                if (move.flags.includes('p')) {
+                  pendingPromotion = { from, to };
+                  promotionModal.classList.add('visible');
+                } else {
+                  makeMove(from, to);
                 }
               }
-            }
-
-            // --- status
-            function updateStatus() {
-              let statusText = game.turn() === 'w' ? 'Weiß am Zug' : 'Schwarz (Bot) am Zug';
-              if (game.in_checkmate()) {
-                statusText = `Schachmatt! ${game.turn() === 'w' ? 'Schwarz' : 'Weiß'} gewinnt.`;
-              } else if (game.in_stalemate() || game.in_threefold_repetition() || game.in_draw()) {
-                statusText = 'Patt! Unentschieden.';
-              } else if (game.in_check()) {
-                statusText += ' (im Schach)';
-              }
-              statusDiv.textContent = statusText;
-            }
-
-            // --- handle clicks & highlighting
-            function handleSquareClick(event) {
-              if (game.turn() !== 'w' || game.game_over()) return;
-              const clickedSquareName = event.currentTarget.dataset.square;
-
-              if (selectedSquare) {
-                const from = selectedSquare.dataset.square;
-                const to = clickedSquareName;
-                const moves = game.moves({ square: from, verbose: true });
-                const move = moves.find(m => m.to === to);
-
-                if (move) {
-                  if (move.flags.includes('p')) {
-                    pendingPromotion = { from, to };
-                    showPromotionModal();
-                  } else {
-                    makeMove(from, to);
-                  }
-                }
-                selectedSquare.classList.remove('selected');
-                document.querySelectorAll('.highlight-move, .highlight-capture').forEach(sq => sq.classList.remove('highlight-move', 'highlight-capture'));
-                selectedSquare = null;
-              } else {
-                const piece = game.get(clickedSquareName);
-                if (piece && piece.color === 'w') {
-                  selectedSquare = event.currentTarget;
-                  selectedSquare.classList.add('selected');
-                  highlightValidMoves(clickedSquareName);
-                }
-              }
-            }
-
-            function highlightValidMoves(square) {
-              const moves = game.moves({ square: square, verbose: true });
-              moves.forEach(move => {
-                const targetSquare = boardDiv.querySelector(`[data-square="${move.to}"]`);
-                if (targetSquare) {
-                  targetSquare.classList.add(move.flags.includes('c') ? 'highlight-capture' : 'highlight-move');
-                }
-              });
-            }
-
-            // --- move execution and history
-            function makeMove(from, to, promotion) {
-              const moveResult = game.move({ from, to, promotion });
-              if (moveResult) {
-                gameHistory.push(game.fen());
-                renderBoard();
-                updateStatus();
-                if (!game.game_over()) setTimeout(makeBotMove, 250);
-              }
-              return moveResult;
-            }
-
-            // --- promotion modal
-            function showPromotionModal() {
-              promotionModal.classList.remove('hidden');
-              promotionModal.setAttribute('aria-hidden', 'false');
-              promotionModal.querySelectorAll('.promote-btn').forEach(btn => {
-                btn.onclick = () => {
-                  if (!pendingPromotion) return;
-                  const { from, to } = pendingPromotion;
-                  makeMove(from, to, btn.dataset.piece);
-                  promotionModal.classList.add('hidden');
-                  promotionModal.setAttribute('aria-hidden', 'true');
-                  pendingPromotion = null;
-                };
-              });
-            }
-
-            // --- bot move using movetime (bounded)
-            function makeBotMove() {
-              if (game.turn() === 'b' && !game.game_over()) {
-                thinkingIndicator.style.display = 'block';
-                const sliderVal = Math.min(40, parseInt(eloSlider.value, 10) || 10);
-                const skillLevel = Math.min(20, sliderVal);
-                try { stockfish.postMessage(`setoption name Skill Level value ${skillLevel}`); } catch (e) {}
-                const movetimeMs = computeMoveTimeFromSlider(sliderVal);
-                stockfish.postMessage(`position fen ${game.fen()}`);
-                stockfish.postMessage(`go movetime ${movetimeMs}`);
-              }
-            }
-
-            // --- stockfish message handler
-            stockfish.onmessage = function(event) {
-              const message = event.data || event;
-              if (typeof message === 'string' && message.startsWith('bestmove')) {
-                const move = message.split(' ')[1];
-                const from = move.substring(0, 2);
-                const to = move.substring(2, 4);
-                const promotion = move.length > 4 ? move.substring(4) : undefined;
-                try { game.move({ from, to, promotion }); } catch (e) { console.warn('invalid move from engine', e); }
-                thinkingIndicator.style.display = 'none';
-                renderBoard();
-                updateStatus();
-              }
-            };
-
-            // --- ELO slider behaviour: update display, restart on change
-            if (eloSlider && eloValueSpan) {
-              eloSlider.addEventListener('input', (e) => {
-                const sliderValue = parseInt(e.target.value, 10);
-                const minElo = 800;
-                const maxElo = 3500;
-                const elo = Math.round(minElo + (sliderValue / 40) * (maxElo - minElo));
-                eloValueSpan.textContent = elo;
-              });
-
-              eloSlider.addEventListener('change', (e) => {
-                const sliderVal = Math.min(40, parseInt(e.target.value, 10) || 10);
-                const skillLevel = Math.min(20, sliderVal);
-                try { stockfish.postMessage(`setoption name Skill Level value ${skillLevel}`); } catch (err) {}
-                initializeGame();
-              });
-            }
-
-            // --- new game button
-            if (newGameBtn) {
-              newGameBtn.addEventListener('click', initializeGame);
-            }
-
-            // --- initialize game at open
-            function initializeGame() {
-              game.reset();
-              gameHistory.length = 0;
+              selectedSquare.classList.remove('selected');
+              document.querySelectorAll('.highlight-move, .highlight-capture').forEach(sq => sq.classList.remove('highlight-move', 'highlight-capture'));
               selectedSquare = null;
-              pendingPromotion = null;
-              try { stockfish.postMessage('ucinewgame'); } catch (e) {}
+            } else {
+              const piece = game.get(clickedSquareName);
+              if (piece && piece.color === 'w') {
+                selectedSquare = event.currentTarget;
+                selectedSquare.classList.add('selected');
+                highlightValidMoves(clickedSquareName);
+              }
+            }
+          }
+          
+          function highlightValidMoves(square) {
+            const moves = game.moves({ square: square, verbose: true });
+            moves.forEach(move => {
+              const targetSquare = boardDiv.querySelector(`[data-square="${move.to}"]`);
+              if (targetSquare) targetSquare.classList.add(move.flags.includes('c') ? 'highlight-capture' : 'highlight-move');
+            });
+          }
+
+          function makeMove(from, to, promotion) {
+            const moveResult = game.move({ from, to, promotion });
+            if (moveResult) {
+              gameHistory.push(game.fen());
               renderBoard();
               updateStatus();
-              // if black should start (not here), you'd call makeBotMove()
-            }
 
-            initializeGame();
+              if (game.game_over()) {
+                  isGameOver = true;
+                  showGameOverPrompt();
+              } else {
+                setTimeout(makeBotMove, 250);
+              }
+            }
+            return moveResult;
+          }
+
+          promotionModal.querySelectorAll('.promote-btn').forEach(btn => {
+              btn.onclick = () => {
+                if (!pendingPromotion) return;
+                const { from, to } = pendingPromotion;
+                makeMove(from, to, btn.dataset.piece);
+                promotionModal.classList.remove('visible');
+                pendingPromotion = null;
+              };
+          });
+
+          function makeBotMove() {
+            if (game.turn() === 'b' && !game.game_over()) {
+              thinkingIndicator.style.display = 'block';
+              const skillLevel = Math.min(20, parseInt(eloSlider.value, 10) || 10);
+              stockfish.postMessage(`setoption name Skill Level value ${skillLevel}`);
+              stockfish.postMessage(`position fen ${game.fen()}`);
+              stockfish.postMessage(`go movetime 500`);
+            }
+          }
+
+          stockfish.onmessage = function(event) {
+            const message = event.data || event;
+            if (typeof message === 'string' && message.startsWith('bestmove')) {
+              thinkingIndicator.style.display = 'none';
+              const move = message.split(' ')[1];
+              const from = move.substring(0, 2);
+              const to = move.substring(2, 4);
+              const promotion = move.length > 4 ? move.substring(4) : undefined;
+              game.move({ from, to, promotion });
+              gameHistory.push(game.fen());
+              renderBoard();
+              updateStatus();
+              if (game.game_over()) {
+                  isGameOver = true;
+                  showGameOverPrompt();
+              }
+            }
+          };
+          
+          function saveCurrentGame() {
+              if (game.history().length === 0) return;
+              try {
+                  const saved = JSON.parse(localStorage.getItem('savedGames') || '[]');
+                  saved.push({ pgn: game.pgn(), fens: [...gameHistory], date: new Date().toISOString() });
+                  localStorage.setItem('savedGames', JSON.stringify(saved));
+              } catch (e) { console.warn('Save failed', e); }
+          }
+          
+          function showGameOverPrompt(isRestart = false) {
+              const template = document.getElementById('game-over-modal-template');
+              const modalClone = template.content.cloneNode(true);
+              document.body.appendChild(modalClone);
+
+              const modalElement = document.body.lastElementChild;
+              const titleEl = modalElement.querySelector('#modal-title');
+              const textEl = modalElement.querySelector('#modal-text');
+              const saveBtn = modalElement.querySelector('#modal-action-save');
+              const newBtn = modalElement.querySelector('#modal-action-new');
+              const closeBtn = modalElement.querySelector('#modal-action-close');
+
+              if (isRestart) {
+                  titleEl.textContent = "Partie läuft";
+                  textEl.textContent = "Möchtest du die aktuelle Partie speichern, bevor du eine neue startest?";
+              } else {
+                  titleEl.textContent = "Partie beendet!";
+                  textEl.textContent = `Möchtest du die Partie speichern? (${statusDiv.textContent})`;
+              }
+
+              saveBtn.onclick = () => {
+                  saveCurrentGame();
+                  if (isRestart) initializeGame();
+                  modalElement.remove();
+              };
+              newBtn.onclick = () => {
+                  initializeGame();
+                  modalElement.remove();
+              };
+              closeBtn.onclick = () => {
+                  modalElement.remove();
+              };
+          }
+
+          newGameBtn.addEventListener('click', () => {
+              if (game.history().length > 0 && !isGameOver) {
+                  showGameOverPrompt(true);
+              } else {
+                  initializeGame();
+              }
+          });
+          
+          eloSlider.addEventListener('input', (e) => {
+              const sliderValue = parseInt(e.target.value, 10);
+              const minElo = 800, maxElo = 3500;
+              eloValueSpan.textContent = Math.round(minElo + (sliderValue / 40) * (maxElo - minElo));
+          });
+
+          function initializeGame() {
+            game.reset();
+            gameHistory = [];
+            selectedSquare = null;
+            pendingPromotion = null;
+            isGameOver = false;
+            stockfish.postMessage('ucinewgame');
+            renderBoard();
+            updateStatus();
+          }
+
+          initializeGame();
         }
 
+        function createReplayApp() {
+            const content = `
+                <div class="replay-viewer-container">
+                    <div class="replay-controls-top">
+                        <input id="replay-search-input" type="text" placeholder="Suche nach Datum oder PGN...">
+                        <button id="replay-import-btn" class="hacker-btn">Import</button>
+                        <button id="replay-refresh-btn" class="hacker-btn">Refresh</button>
+                    </div>
+                    <div class="replay-list-container"></div>
+                    <input type="file" id="replay-file-input" accept=".json,.pgn" style="display:none;">
+                </div>
+            `;
+            const replayWindow = createWindow('Replay Viewer', content, {width:'800px', height:'600px'});
 
+            const searchInput = replayWindow.querySelector('#replay-search-input');
+            const importBtn = replayWindow.querySelector('#replay-import-btn');
+            const refreshBtn = replayWindow.querySelector('#replay-refresh-btn');
+            const listContainer = replayWindow.querySelector('.replay-list-container');
+            const fileInput = replayWindow.querySelector('#replay-file-input');
 
+            let currentGames = [];
+            
+            function renderList(filter = '') {
+                listContainer.innerHTML = '';
+                const filtered = currentGames.filter(g => {
+                    if (!filter) return true;
+                    const fLower = filter.toLowerCase();
+                    return (g.date && g.date.toLowerCase().includes(fLower)) || (g.pgn && g.pgn.toLowerCase().includes(fLower));
+                });
 
+                if (filtered.length === 0) {
+                    listContainer.innerHTML = '<p>Keine Partien gefunden.</p>';
+                    return;
+                }
+                
+                filtered.forEach((gameData, originalIndex) => {
+                    const item = document.createElement('div');
+                    item.className = 'replay-list-item';
+                    item.innerHTML = `
+                        <div>
+                            <strong>${new Date(gameData.date).toLocaleString()}</strong>
+                            <div style="font-size:0.8rem; opacity:0.7;">${gameData.pgn.split('\n')[0].slice(0, 60)}...</div>
+                        </div>
+                        <button class="hacker-btn">Öffnen</button>
+                    `;
+                    item.querySelector('button').onclick = (e) => {
+                        e.stopPropagation();
+                        openPlayer(gameData.fens);
+                    };
+                    listContainer.appendChild(item);
+                });
+            }
 
+            function openPlayer(fens) {
+                if (document.querySelector('.replay-player-container')) return;
+
+                const playerEl = document.createElement('div');
+                playerEl.className = 'replay-player-container';
+                playerEl.innerHTML = `
+                    <div id="replay-board-viewer" class="chess-board"></div>
+                    <div class="replay-player-controls">
+                        <button id="player-prev" class="hacker-btn">◀</button>
+                        <span id="replay-pos-viewer">0/0</span>
+                        <button id="player-next" class="hacker-btn">▶</button>
+                        <button id="player-close" class="hacker-btn">Schließen</button>
+                    </div>
+                `;
+                document.body.appendChild(playerEl);
+                
+                const boardEl = playerEl.querySelector('#replay-board-viewer');
+                const posEl = playerEl.querySelector('#replay-pos-viewer');
+                const prevBtn = playerEl.querySelector('#player-prev');
+                const nextBtn = playerEl.querySelector('#player-next');
+                const closeBtn = playerEl.querySelector('#player-close');
+
+                let viewerGame = new Chess();
+                let currentIndex = 0;
+                
+                function renderReplayBoard() {
+                    boardEl.innerHTML = '';
+                    const boardData = viewerGame.board();
+                    for (let row = 0; row < 8; row++) {
+                        for (let col = 0; col < 8; col++) {
+                            const squareEl = document.createElement('div');
+                            squareEl.className = `chess-square ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
+                            const piece = boardData[row][col];
+                            if (piece) {
+                                const img = document.createElement('img');
+                                img.src = pieceImages[piece.color][piece.type];
+                                img.className = 'chess-piece-img';
+                                squareEl.appendChild(img);
+                            }
+                            boardEl.appendChild(squareEl);
+                        }
+                    }
+                }
+                
+                function updatePlayerState() {
+                    viewerGame.load(fens[currentIndex]);
+                    posEl.textContent = `${currentIndex + 1}/${fens.length}`;
+                    renderReplayBoard();
+                }
+
+                const keyHandler = (e) => {
+                    if (e.key === 'ArrowLeft') {
+                        if (currentIndex > 0) { currentIndex--; updatePlayerState(); }
+                    } else if (e.key === 'ArrowRight') {
+                        if (currentIndex < fens.length - 1) { currentIndex++; updatePlayerState(); }
+                    } else if (e.key === 'Escape') {
+                        closePlayer();
+                    }
+                };
+
+                function closePlayer() {
+                    document.removeEventListener('keydown', keyHandler);
+                    playerEl.remove();
+                }
+
+                prevBtn.onclick = () => { if (currentIndex > 0) { currentIndex--; updatePlayerState(); } };
+                nextBtn.onclick = () => { if (currentIndex < fens.length - 1) { currentIndex++; updatePlayerState(); } };
+                closeBtn.onclick = closePlayer;
+
+                document.addEventListener('keydown', keyHandler);
+                updatePlayerState();
+            }
+
+            function loadAndRender() {
+                try {
+                    currentGames = JSON.parse(localStorage.getItem('savedGames') || '[]').reverse();
+                    renderList(searchInput.value);
+                } catch(e) { console.error("Could not load games", e); }
+            }
+
+            searchInput.addEventListener('input', () => renderList(searchInput.value));
+            refreshBtn.addEventListener('click', loadAndRender);
+            importBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const importedData = JSON.parse(event.target.result);
+                        let gamesToSave = Array.isArray(importedData) ? importedData : [importedData];
+                        const allGames = JSON.parse(localStorage.getItem('savedGames') || '[]');
+                        allGames.push(...gamesToSave);
+                        localStorage.setItem('savedGames', JSON.stringify(allGames));
+                        loadAndRender();
+                    } catch (err) {
+                        alert('Import fehlgeschlagen. Bitte stelle sicher, dass es eine gültige JSON-Datei ist.');
+                    }
+                };
+                reader.readAsText(file);
+                fileInput.value = ''; // Reset for next import
+            });
+
+            loadAndRender();
+        }
 
         // =========================================================================
         // BOOT-SEQUENZ
@@ -1700,9 +1549,6 @@
             window.requestAnimationFrame(step);
         }
 
-        /**
-         * Zeigt den Desktop-Bildschirm an und blendet den Ladebildschirm aus.
-         */
         async function showDesktop() {
             loadingText.style.opacity = 0;
             accessGranted.style.display = 'block';
@@ -1715,20 +1561,11 @@
         }
 
         // --- Event-Listener und Initialisierung ---
-        newTerminalBtn.addEventListener('click', () => createTerminalWindow());
-        consoleIcon.addEventListener('click', () => {
-            desktop.style.display = 'none';
-            newTerminalBtn.style.display = 'block';
-            createTerminalWindow();
-        });
-        chessIcon.addEventListener('click', () => {
-            desktop.style.display = 'none';
-            newTerminalBtn.style.display = 'block';
-            createChessWindow();
-        });
+        newTerminalBtn.addEventListener('click', createTerminalWindow);
+        consoleIcon.addEventListener('click', createTerminalWindow);
+        chessIcon.addEventListener('click', createChessWindow);
+        replayIcon.addEventListener('click', createReplayApp);
         window.onload = () => {init3D(); animate3D(); runBootSequence();};
     </script>
 </body>
-
 </html>
-
