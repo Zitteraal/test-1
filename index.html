@@ -317,6 +317,7 @@
         }
 
 
+
         .terminal-header {
             background-color: #0a0a0a;
             color: #00FF00;
@@ -455,6 +456,7 @@
 
 
 
+
         .chess-square {
             width: 100%;
             height: 100%;
@@ -480,6 +482,13 @@
             transform-origin: center;
             transition: transform 0.2s ease, opacity 0.2s ease;
             z-index: 1;
+        }
+        .chess-piece-img {
+            width: 86%;
+            height: 86%;
+            object-fit: contain;
+            pointer-events: none;
+            display: block;
         }
         
         .chess-piece:enter {
@@ -1308,27 +1317,24 @@
                 </div>
             `;
             const chessWindow = createWindow('Schach vs. Stockfish', initialContent, { width: 'auto', height: 'auto' });
-            // Funktion: passt Fenster so an, dass Header + quadratisches Schachbrett komplett sichtbar sind
+
+            // --- window fit helper: passt Fenster so an, dass Header + quadratisches Brett komplett sichtbar sind
             function fitChessWindow(win) {
-              // Header-Höhe (falls vorhanden)
               const header = win.querySelector('.terminal-header');
               const headerH = header ? header.offsetHeight : 60;
 
-              // Entferne extra Padding im inneren Container (verhindert Scrollbars)
               const boardContainer = win.querySelector('.chess-board-container');
               if (boardContainer) {
-                boardContainer.style.padding = '0';            // kein äußeres Padding mehr
+                boardContainer.style.padding = '0';
                 boardContainer.style.boxSizing = 'border-box';
                 boardContainer.style.width = '100%';
                 boardContainer.style.height = '100%';
                 boardContainer.style.overflow = 'hidden';
-                // falls die initiale version text zeigt, behalte zentrierung:
                 boardContainer.style.display = 'flex';
                 boardContainer.style.flexDirection = 'column';
                 boardContainer.style.alignItems = 'stretch';
               }
 
-              // Sicherstellen, dass das Board-Element selbst 100% des Container-Inhalts nutzt
               const boardEl = win.querySelector('.chess-board');
               if (boardEl) {
                 boardEl.style.width = '100%';
@@ -1336,46 +1342,30 @@
                 boardEl.style.boxSizing = 'border-box';
               }
 
-              // Platz für Header + Schatten/Rand (ggf. anpassen)
-              const paddingForWindow = 40; // klein halten, damit Brett so groß wie möglich bleibt
-
-              // Berechne boardSize: das Quadrat, das in den Viewport passt abzüglich Header und padding
+              const paddingForWindow = 40;
               const maxWidthAvailable = window.innerWidth - paddingForWindow;
               const maxHeightAvailable = window.innerHeight - paddingForWindow - headerH;
-              const boardSize = Math.max(160, Math.min(maxWidthAvailable, maxHeightAvailable)); // min-Größe 160
+              const boardSize = Math.max(160, Math.min(maxWidthAvailable, maxHeightAvailable));
 
-              // Setze Fenstergröße: Header + quadratisches Brett
               win.style.width = boardSize + 'px';
               win.style.height = (boardSize + headerH) + 'px';
 
-              // Zentrieren
               win.style.left = '50%';
               win.style.top = '50%';
               win.style.transform = 'translate(-50%, -50%)';
 
-              // Kein inneres Scrollen
               win.style.overflow = 'hidden';
-              // optional: disable resize handle if any left
               win.style.resize = 'none';
             }
 
-            // direkt anwenden
             fitChessWindow(chessWindow);
-
-            // bei Fenstergröße ändern, Fenster nachjustieren
-            // entferne vorherige resize-Handler, falls mehrfach hinzugefügt werden könnte
             (function attachResizeListener(win) {
               const handler = () => fitChessWindow(win);
               window.addEventListener('resize', handler);
-              // falls du später entfernen willst: window.removeEventListener('resize', handler);
             })(chessWindow);
 
-
-
-
-
+            // --- load chess.js once (keeps existing logic)
             const loaderDiv = chessWindow.querySelector('.chess-board-container');
-
             try {
                 if (!chessScriptsLoaded) {
                     loaderDiv.innerHTML = "<p style='color:#00FF00;'>Lade Schach-Module...</p>";
@@ -1383,16 +1373,16 @@
                     chessScriptsLoaded = true;
                 }
                 loaderDiv.innerHTML = "<p style='color:#00FF00;'>Module wurden geladen ✅</p>";
-                setTimeout(() => loaderDiv.remove(), 1500); // Nachricht nach 1,5s ausblenden
+                setTimeout(() => loaderDiv.remove(), 1500);
             } catch (error) {
                 console.error(error);
                 loaderDiv.innerHTML = '<p style="color: #FF0000;">Fehler beim Laden der Engine.</p>';
                 return;
             }
 
-
+            // --- insert game UI
             const gameContentHTML = `
-                <div id="thinking-indicator">Stockfish denkt nach...</div>
+                <div id="thinking-indicator" style="display:none;">Stockfish denkt nach...</div>
                 <div class="chess-board-container">
                     <div class="chess-topbar">
                         <div id="chess-status" class="chess-status">Weiß am Zug</div>
@@ -1421,8 +1411,8 @@
                 </div>
             `;
             chessWindow.querySelector('.terminal-header').insertAdjacentHTML('afterend', gameContentHTML);
-            // chessWindow.querySelector('.chess-board-container').remove(); // nicht löschen!
 
+            // --- references
             const boardDiv = chessWindow.querySelector('.chess-board');
             const statusDiv = chessWindow.querySelector('#chess-status');
             const newGameBtn = chessWindow.querySelector('#new-game-btn');
@@ -1431,240 +1421,236 @@
             const eloSlider = chessWindow.querySelector('#elo-slider');
             const eloValueSpan = chessWindow.querySelector('#elo-value');
 
-            const pieceEmojis = {
-                'w': {'p': '♙','r': '♖','n': '♘','b': '♗','q': '♕','k': '♔'},
-                'b': {'p': '♟','r': '♜','n': '♞','b': '♝','q': '♛','k': '♚'}
+            // --- piece images (SVG links)
+            const pieceImages = {
+              'w': {
+                'p': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg',
+                'r': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg',
+                'n': 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg',
+                'b': 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg',
+                'q': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg',
+                'k': 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg'
+              },
+              'b': {
+                'p': 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg',
+                'r': 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
+                'n': 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg',
+                'b': 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg',
+                'q': 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg',
+                'k': 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg'
+              }
             };
+            function createPieceImage(color, type) {
+              const img = document.createElement('img');
+              img.src = pieceImages[color][type];
+              img.alt = (color === 'w' ? 'white-' : 'black-') + type;
+              img.className = 'chess-piece-img';
+              return img;
+            }
 
+            // --- game + engine
             let game = new Chess();
-            // === Stockfish Worker erstellen + Standard-Optionen setzen ===
             let stockfish = new Worker("js/stockfish.js");
 
-            // Configure engine options to speed up responses
-            // Threads: use up to 4 or available logical cores
+            // engine speed options
             const hwThreads = Math.max(1, Math.min(4, navigator.hardwareConcurrency || 2));
-            stockfish.postMessage(`setoption name Threads value ${hwThreads}`);
+            try { stockfish.postMessage(`setoption name Threads value ${hwThreads}`); } catch(e){}
+            try { stockfish.postMessage(`setoption name Hash value 64`); } catch(e){}
 
-            // Hash (MB) — moderate value to speed memory table lookups without bloating
-            stockfish.postMessage(`setoption name Hash value 64`);
-
-            // If engine supports Skill Level, keep existing mapping but we'll set it per-move as well
-            // stockfish.postMessage(`setoption name Skill Level value 10`);
-
-            // Small helper to map slider (0-40) to movetime (ms).
-            // Lower slider => faster (less thinking). Adjust min/max to taste.
             function computeMoveTimeFromSlider(sliderVal) {
-              const minMS = 80;    // super-fast, low strength
-              const maxMS = 1500;  // slower, stronger
-              const t = Math.max(0, Math.min(40, sliderVal)) / 40; // 0..1
-              // use a non-linear curve (quadratic) so low levels are very fast
+              const minMS = 80;
+              const maxMS = 1500;
+              const t = Math.max(0, Math.min(40, sliderVal)) / 40;
               const scaled = minMS + (maxMS - minMS) * (t * t);
               return Math.round(scaled);
             }
 
+            // --- replay history (optional baseline)
+            const gameHistory = []; // will store FENs after moves
 
             let selectedSquare = null;
             let pendingPromotion = null;
 
-            function initializeGame() {
-                game.reset();
-                selectedSquare = null;
-                pendingPromotion = null;
-                stockfish.postMessage('ucinewgame');
-                renderBoard();
-                updateStatus();
-            }
-
+            // --- render board (uses SVG images)
             function renderBoard() {
-                boardDiv.innerHTML = '';
-                const boardData = game.board();
-                const history = game.history({ verbose: true });
-                const lastMove = history.length > 0 ? history[history.length - 1] : null;
+              boardDiv.innerHTML = '';
+              const boardData = game.board();
+              const history = game.history({ verbose: true });
+              const lastMove = history.length > 0 ? history[history.length - 1] : null;
 
-                for (let row = 0; row < 8; row++) {
-                    for (let col = 0; col < 8; col++) {
-                        const squareEl = document.createElement('div');
-                        const isLight = (row + col) % 2 === 0;
-                        squareEl.classList.add('chess-square', isLight ? 'light' : 'dark');
-                        const squareName = String.fromCharCode('a'.charCodeAt(0) + col) + (8 - row);
-                        squareEl.dataset.square = squareName;
+              for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                  const squareEl = document.createElement('div');
+                  const isLight = (row + col) % 2 === 0;
+                  squareEl.classList.add('chess-square', isLight ? 'light' : 'dark');
+                  const squareName = String.fromCharCode('a'.charCodeAt(0) + col) + (8 - row);
+                  squareEl.dataset.square = squareName;
 
-                        if (lastMove) {
-                            if (lastMove.from === squareName) squareEl.classList.add('last-move-from');
-                            if (lastMove.to === squareName) squareEl.classList.add('last-move-to');
-                        }
+                  if (lastMove) {
+                    if (lastMove.from === squareName) squareEl.classList.add('last-move-from');
+                    if (lastMove.to === squareName) squareEl.classList.add('last-move-to');
+                  }
 
-                        const piece = boardData[row][col];
-                        if (piece) {
-                            const pieceSpan = document.createElement('span');
-                            pieceSpan.classList.add('chess-piece', piece.color === 'w' ? 'white-piece' : 'black-piece');
-                            pieceSpan.textContent = pieceEmojis[piece.color][piece.type];
-                            squareEl.appendChild(pieceSpan);
-                        }
-                        squareEl.addEventListener('click', handleSquareClick);
-                        boardDiv.appendChild(squareEl);
-                    }
+                  const piece = boardData[row][col];
+                  if (piece) {
+                    const img = createPieceImage(piece.color, piece.type);
+                    squareEl.appendChild(img);
+                  }
+                  squareEl.addEventListener('click', handleSquareClick);
+                  boardDiv.appendChild(squareEl);
                 }
+              }
             }
 
+            // --- status
             function updateStatus() {
-                let statusText = game.turn() === 'w' ? 'Weiß am Zug' : 'Schwarz (Bot) am Zug';
-
-                if (game.in_checkmate()) {
-                    statusText = `Schachmatt! ${game.turn() === 'w' ? 'Schwarz' : 'Weiß'} gewinnt.`;
-                } else if (game.in_stalemate() || game.in_threefold_repetition() || game.in_draw()) {
-                    statusText = 'Patt! Unentschieden.';
-                } else if (game.in_check()) {
-                    statusText += ' (im Schach)';
-                }
-
-                statusDiv.textContent = statusText;
+              let statusText = game.turn() === 'w' ? 'Weiß am Zug' : 'Schwarz (Bot) am Zug';
+              if (game.in_checkmate()) {
+                statusText = `Schachmatt! ${game.turn() === 'w' ? 'Schwarz' : 'Weiß'} gewinnt.`;
+              } else if (game.in_stalemate() || game.in_threefold_repetition() || game.in_draw()) {
+                statusText = 'Patt! Unentschieden.';
+              } else if (game.in_check()) {
+                statusText += ' (im Schach)';
+              }
+              statusDiv.textContent = statusText;
             }
 
+            // --- handle clicks & highlighting
             function handleSquareClick(event) {
-                if (game.turn() !== 'w' || game.game_over()) return;
+              if (game.turn() !== 'w' || game.game_over()) return;
+              const clickedSquareName = event.currentTarget.dataset.square;
 
-                const clickedSquareName = event.currentTarget.dataset.square;
+              if (selectedSquare) {
+                const from = selectedSquare.dataset.square;
+                const to = clickedSquareName;
+                const moves = game.moves({ square: from, verbose: true });
+                const move = moves.find(m => m.to === to);
 
-                if (selectedSquare) {
-                    const from = selectedSquare.dataset.square;
-                    const to = clickedSquareName;
-
-                    const moves = game.moves({ square: from, verbose: true });
-                    const move = moves.find(m => m.to === to);
-
-                    if (move) {
-                        if (move.flags.includes('p')) {
-                           pendingPromotion = { from, to };
-                           showPromotionModal();
-                        } else {
-                           makeMove(from, to);
-                        }
-                    }
-
-                    selectedSquare.classList.remove('selected');
-                    document.querySelectorAll('.highlight-move, .highlight-capture').forEach(sq => {
-                        sq.classList.remove('highlight-move', 'highlight-capture');
-                    });
-                    selectedSquare = null;
-
-                } else {
-                    const piece = game.get(clickedSquareName);
-                    if (piece && piece.color === 'w') {
-                        selectedSquare = event.currentTarget;
-                        selectedSquare.classList.add('selected');
-                        highlightValidMoves(clickedSquareName);
-                    }
+                if (move) {
+                  if (move.flags.includes('p')) {
+                    pendingPromotion = { from, to };
+                    showPromotionModal();
+                  } else {
+                    makeMove(from, to);
+                  }
                 }
-            }
-
-            function makeMove(from, to, promotion) {
-                const moveResult = game.move({ from, to, promotion });
-                if (moveResult) {
-                    renderBoard();
-                    updateStatus();
-                    if (!game.game_over()) {
-                        setTimeout(makeBotMove, 250);
-                    }
+                selectedSquare.classList.remove('selected');
+                document.querySelectorAll('.highlight-move, .highlight-capture').forEach(sq => sq.classList.remove('highlight-move', 'highlight-capture'));
+                selectedSquare = null;
+              } else {
+                const piece = game.get(clickedSquareName);
+                if (piece && piece.color === 'w') {
+                  selectedSquare = event.currentTarget;
+                  selectedSquare.classList.add('selected');
+                  highlightValidMoves(clickedSquareName);
                 }
-                return moveResult;
+              }
             }
 
             function highlightValidMoves(square) {
-                const moves = game.moves({ square: square, verbose: true });
-                moves.forEach(move => {
-                    const targetSquare = boardDiv.querySelector(`[data-square="${move.to}"]`);
-                    if (targetSquare) {
-                        targetSquare.classList.add(move.flags.includes('c') ? 'highlight-capture' : 'highlight-move');
-                    }
-                });
+              const moves = game.moves({ square: square, verbose: true });
+              moves.forEach(move => {
+                const targetSquare = boardDiv.querySelector(`[data-square="${move.to}"]`);
+                if (targetSquare) {
+                  targetSquare.classList.add(move.flags.includes('c') ? 'highlight-capture' : 'highlight-move');
+                }
+              });
             }
 
+            // --- move execution and history
+            function makeMove(from, to, promotion) {
+              const moveResult = game.move({ from, to, promotion });
+              if (moveResult) {
+                gameHistory.push(game.fen());
+                renderBoard();
+                updateStatus();
+                if (!game.game_over()) setTimeout(makeBotMove, 250);
+              }
+              return moveResult;
+            }
+
+            // --- promotion modal
             function showPromotionModal() {
-                promotionModal.classList.remove('hidden');
-                promotionModal.setAttribute('aria-hidden', 'false');
-
-                promotionModal.querySelectorAll('.promote-btn').forEach(btn => {
-                    btn.onclick = () => {
-                        if (!pendingPromotion) return;
-                        const { from, to } = pendingPromotion;
-                        makeMove(from, to, btn.dataset.piece);
-                        promotionModal.classList.add('hidden');
-                        promotionModal.setAttribute('aria-hidden', 'true');
-                        pendingPromotion = null;
-                    };
-                });
+              promotionModal.classList.remove('hidden');
+              promotionModal.setAttribute('aria-hidden', 'false');
+              promotionModal.querySelectorAll('.promote-btn').forEach(btn => {
+                btn.onclick = () => {
+                  if (!pendingPromotion) return;
+                  const { from, to } = pendingPromotion;
+                  makeMove(from, to, btn.dataset.piece);
+                  promotionModal.classList.add('hidden');
+                  promotionModal.setAttribute('aria-hidden', 'true');
+                  pendingPromotion = null;
+                };
+              });
             }
 
+            // --- bot move using movetime (bounded)
             function makeBotMove() {
-                if (game.turn() === 'b' && !game.game_over()) {
-                    thinkingIndicator.style.display = 'block';
-
-                    // Skill/level mapping stays — keep it if you like
-                    const sliderVal = Math.min(40, parseInt(eloSlider.value, 10) || 10);
-                    const skillLevel = Math.min(20, sliderVal); // keep backward compatibility
-
-                    // Set engine skill level (optional, some builds support it)
-                    try {
-                      stockfish.postMessage(`setoption name Skill Level value ${skillLevel}`);
-                    } catch (e) {
-                      // ignore if unsupported
-                    }
-
-                    // Compute movetime based on the slider: lower slider -> faster response
-                    const movetimeMs = computeMoveTimeFromSlider(sliderVal);
-
-                    // Ensure engine uses latest position
-                    stockfish.postMessage(`position fen ${game.fen()}`);
-
-                    // Use movetime instead of deep depth search to bound response time
-                    // movetime is in milliseconds
-                    stockfish.postMessage(`go movetime ${movetimeMs}`);
-                }
+              if (game.turn() === 'b' && !game.game_over()) {
+                thinkingIndicator.style.display = 'block';
+                const sliderVal = Math.min(40, parseInt(eloSlider.value, 10) || 10);
+                const skillLevel = Math.min(20, sliderVal);
+                try { stockfish.postMessage(`setoption name Skill Level value ${skillLevel}`); } catch (e) {}
+                const movetimeMs = computeMoveTimeFromSlider(sliderVal);
+                stockfish.postMessage(`position fen ${game.fen()}`);
+                stockfish.postMessage(`go movetime ${movetimeMs}`);
+              }
             }
 
+            // --- stockfish message handler
             stockfish.onmessage = function(event) {
-                const message = event.data || event;
-                if (typeof message === 'string' && message.startsWith('bestmove')) {
-                    const move = message.split(' ')[1];
-                    const from = move.substring(0, 2);
-                    const to = move.substring(2, 4);
-                    const promotion = move.length > 4 ? move.substring(4) : undefined;
-
-                    game.move({ from, to, promotion });
-
-                    thinkingIndicator.style.display = 'none';
-                    renderBoard();
-                    updateStatus();
-                }
+              const message = event.data || event;
+              if (typeof message === 'string' && message.startsWith('bestmove')) {
+                const move = message.split(' ')[1];
+                const from = move.substring(0, 2);
+                const to = move.substring(2, 4);
+                const promotion = move.length > 4 ? move.substring(4) : undefined;
+                try { game.move({ from, to, promotion }); } catch (e) { console.warn('invalid move from engine', e); }
+                thinkingIndicator.style.display = 'none';
+                renderBoard();
+                updateStatus();
+              }
             };
 
+            // --- ELO slider behaviour: update display, restart on change
             if (eloSlider && eloValueSpan) {
-                eloSlider.addEventListener('input', (e) => {
-                    const sliderValue = parseInt(e.target.value, 10);
-                    const minElo = 800;
-                    const maxElo = 3500;
-                    const elo = Math.round(minElo + (sliderValue / 40) * (maxElo - minElo));
-                    eloValueSpan.textContent = elo;
-                });
-                eloSlider.addEventListener('change', (e) => {
-                    const sliderVal = Math.min(40, parseInt(e.target.value, 10) || 10);
-                    const skillLevel = Math.min(20, sliderVal);
-                    try {
-                        stockfish.postMessage(`setoption name Skill Level value ${skillLevel}`);
-                    } catch (err) {}
-                    initializeGame();
-                });
+              eloSlider.addEventListener('input', (e) => {
+                const sliderValue = parseInt(e.target.value, 10);
+                const minElo = 800;
+                const maxElo = 3500;
+                const elo = Math.round(minElo + (sliderValue / 40) * (maxElo - minElo));
+                eloValueSpan.textContent = elo;
+              });
 
+              eloSlider.addEventListener('change', (e) => {
+                const sliderVal = Math.min(40, parseInt(e.target.value, 10) || 10);
+                const skillLevel = Math.min(20, sliderVal);
+                try { stockfish.postMessage(`setoption name Skill Level value ${skillLevel}`); } catch (err) {}
+                initializeGame();
+              });
             }
-            
 
+            // --- new game button
             if (newGameBtn) {
-                newGameBtn.addEventListener('click', initializeGame);
+              newGameBtn.addEventListener('click', initializeGame);
+            }
+
+            // --- initialize game at open
+            function initializeGame() {
+              game.reset();
+              gameHistory.length = 0;
+              selectedSquare = null;
+              pendingPromotion = null;
+              try { stockfish.postMessage('ucinewgame'); } catch (e) {}
+              renderBoard();
+              updateStatus();
+              // if black should start (not here), you'd call makeBotMove()
             }
 
             initializeGame();
         }
+
 
 
 
