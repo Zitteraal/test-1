@@ -1,278 +1,1631 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KI-Chatbot mit Persönlichkeit</title>
+    <title>Hacker-Terminal V2</title>
+
+    <!-- Import der THREE.js-Bibliothek für 3D-Grafiken -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
-        
+        /* ========================================================================= */
+        /* ALLGEMEINES STYLING UND FONT */
+        /* ========================================================================= */
+        html,
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0f2f5;
+            height: 100%;
+            margin: 0;
+            background: #000;
+            color: #00FF00;
+            font-family: 'VT323', monospace;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ========================================================================= */
+        /* LADEBILDSCHIRM-STYLING (Hacker-Animation) */
+        /* ========================================================================= */
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 1.5s ease-in-out;
+            text-align: center;
+        }
+
+        #sphere-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
-            padding: 20px;
+            z-index: 10;
         }
 
-        .chat-container {
+        #loading-text {
+            position: absolute;
+            font-size: clamp(1rem, 4vw, 2.5rem);
+            color: #00FF00;
+            text-shadow: 0 0 10px #00FF00;
+            z-index: 12;
+            white-space: nowrap;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        #loading-log {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 450px;
+            max-height: 250px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 8px;
+            border: 2px solid #00FF00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.7);
+            z-index: 13;
+            padding: 15px;
+            overflow-y: auto;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        .log-line {
+            color: #00FF00;
+            margin: 0;
+            white-space: pre-wrap;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+            animation-delay: var(--delay);
+        }
+
+        .status-ok {
+            color: #00FF00;
+        }
+
+        .status-info {
+            color: #FFFF00;
+        }
+
+        .status-warn {
+            color: #FFA500;
+        }
+
+        .status-fail {
+            color: #FF0000;
+        }
+
+        .status-success {
+            color: #00FF00;
+        }
+
+        #progress-bar-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            height: 25px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 2px solid #00FF00;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
+            overflow: hidden;
+            z-index: 13;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        #progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background-color: #00FF00;
+            transition: width 0.5s ease-out;
+            box-shadow: 0 0 8px #00FF00;
+        }
+
+        #access-granted {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(3.5rem, 12vw, 6rem);
+            text-shadow: 0 0 25px #00FF00, 0 0 50px rgba(0, 255, 0, 0.7);
+            animation: glitch-anim 0.6s infinite linear alternate, fadeIn 1.2s forwards;
+            display: none;
+            opacity: 0;
+            z-index: 11;
+            transition: opacity 1.2s ease-in-out;
+        }
+
+        .glitch-text {
+            animation: glitch-anim 2.5s infinite linear alternate;
+        }
+
+        @keyframes glitch-anim {
+            0% {
+                text-shadow: none;
+            }
+
+            10% {
+                text-shadow: 0.04em 0.03em 0 #00FF00, -0.02em -0.02em 0 #00FFFF, 0.03em 0.04em 0 #FFFF00;
+            }
+
+            20% {
+                text-shadow: none;
+            }
+
+            30% {
+                text-shadow: 0.02em 0.03em 0 #FF0000, -0.04em -0.02em 0 #00FFFF, 0.02em 0.03em 0 #00FF00;
+            }
+
+            40% {
+                text-shadow: none;
+            }
+
+            50% {
+                text-shadow: -0.03em -0.04em 0 #00FFFF, 0.03em 0.02em 0 #FF0000, -0.02em -0.03em 0 #00FF00;
+            }
+
+            60% {
+                text-shadow: none;
+            }
+
+            70% {
+                text-shadow: 0.04em 0.02em 0 #00FF00, -0.03em -0.03em 0 #FFFF00, 0.04em 0.02em 0 #FF0000;
+            }
+
+            80% {
+                text-shadow: none;
+            }
+
+            90% {
+                text-shadow: -0.02em -0.04em 0 #FFFF00, 0.03em 0.03em 0 #00FFFF, -0.04em -0.02em 0 #00FF00;
+            }
+
+            100% {
+                text-shadow: none;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* ========================================================================= */
+        /* DESKTOP-STYLING */
+        /* ========================================================================= */
+        #desktop {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            max-width: 600px;
-            height: 80vh;
-            background-color: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            height: 100%;
+            background-color: #000;
+            z-index: 50;
+            display: none;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            padding: 20px;
+            gap: 20px;
+            transition: opacity 0.3s ease;
+        }
+        #desktop.hidden {
+          opacity: 0;
+          pointer-events: none;
+        }
+
+        .desktop-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 120px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .desktop-icon:hover {
+            background-color: rgba(0, 255, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .icon-svg {
+            width: 60px;
+            height: 60px;
+            fill: #00FF00;
+            filter: drop-shadow(0 0 8px rgba(0, 255, 0, 0.6));
+        }
+
+        .icon-label {
+            margin-top: 8px;
+            color: #00FF00;
+            text-shadow: 0 0 5px #00FF00;
+            font-size: 1.2rem;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        /* ========================================================================= */
+        /* MAIN APP STYLING (TERMINAL & SCHACH) */
+        /* ========================================================================= */
+        #newTerminalBtn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: none;
+            padding: 8px 12px;
+            background-color: #0a0a0a;
+            color: #00FF00;
+            border: 2px solid #00FF00;
+            font-family: 'VT323', monospace;
+            font-size: 1.5rem;
+            text-shadow: 0 0 10px #00FF00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.7);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 50;
+        }
+
+        #newTerminalBtn:hover {
+            background-color: #001a00;
+            box-shadow: 0 0 25px rgba(0, 255, 0, 1);
+            transform: scale(1.05);
+        }
+
+        .terminal-window {
+            width: 70%;
+            max-width: 700px;
+            height: 80%;
+            max-height: 500px;
+            background-color: #000;
+            border: 2px solid #00FF00;
+            box-shadow: 0 0 25px rgba(0, 255, 0, 0.7);
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            border-radius: 8px;
+            position: absolute;
+            z-index: 2;
+            resize: both;
+            overflow: auto;
         }
 
-        .chat-header {
-            background-color: #4CAF50;
-            color: #ffffff;
-            padding: 15px;
-            text-align: center;
-            font-size: 1.25rem;
-            font-weight: 500;
+        .terminal-header {
+            background-color: #0a0a0a;
+            color: #00FF00;
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #00FF00;
+            cursor: grab;
         }
 
-        .chat-messages {
+        .terminal-header h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            text-shadow: 0 0 6px #00FF00;
+        }
+
+        .close-btn {
+            background-color: transparent;
+            color: #00FF00;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.3s ease, text-shadow 0.3s ease;
+            text-shadow: 0 0 8px #00FF00;
+        }
+
+        .close-btn:hover {
+            color: #FF0000;
+            text-shadow: 0 0 12px #FF0000;
+        }
+
+        .terminal-output {
             flex-grow: 1;
             padding: 20px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 5px;
+            background-color: rgba(13, 13, 13, 0.6);
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            font-size: 1.1rem;
+            line-height: 1.2;
+            white-space: pre-wrap;
         }
 
-        .message {
-            max-width: 75%;
-            padding: 12px 18px;
-            border-radius: 20px;
-            line-height: 1.5;
+        .terminal-output::-webkit-scrollbar {
+            display: none;
+        }
+
+        .log-entry {
+            max-width: 100%;
             word-wrap: break-word;
+            font-family: 'VT323', monospace;
+            color: #00FF00;
         }
 
-        .user-message {
-            align-self: flex-end;
-            background-color: #007bff;
-            color: #ffffff;
-            border-bottom-right-radius: 5px;
+        .user-input-line {
+            color: #FFFFFF;
+            font-weight: bold;
         }
 
-        .bot-message {
-            align-self: flex-start;
-            background-color: #e0e0e0;
-            color: #333;
-            border-bottom-left-radius: 5px;
+        .terminal-input-container {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            background-color: rgba(13, 13, 13, 0.95);
+            border-top: 2px solid #00FF00;
+            font-size: 1.1rem;
         }
-        
-        .bot-message.loading-spinner {
+
+        .prompt-symbol {
+            color: #00FF00;
+            font-size: 1.2rem;
+            margin-right: 8px;
+        }
+
+        .terminal-input-container input[type="text"] {
+            flex-grow: 1;
+            border: none;
+            background-color: transparent;
+            color: #00FF00;
+            font-size: 1.1rem;
+            outline: none;
+            font-family: 'VT323', monospace;
+        }
+
+        .terminal-input-container button {
+            background-color: #008800;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 400;
+            transition: transform 0.3s ease, box-shadow 0.4s ease;
+            box-shadow: 0 0 8px rgba(0, 255, 0, 0.6);
+            font-family: 'VT323', monospace;
+        }
+
+        .terminal-input-container button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 12px rgba(0, 255, 0, 0.8);
+        }
+
+        /* ========================================================================= */
+        /* SCHACH-STYLING */
+        /* ========================================================================= */
+        .chess-window .terminal-header {
+             cursor: grab;
+        }
+        .chess-board-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .chess-board {
+            display: grid;
+              grid-template-columns: repeat(8, 1fr);
+              grid-template-rows: repeat(8, 1fr);
+              aspect-ratio: 1 / 1;        /* macht das Brett quadratisch */
+              width: 90vmin;              /* passt sich an Fenster an, max 90% */
+              max-width: 600px;           /* optional, Limit */
+              border: 2px solid #00ff00;  /* grüner Rahmen fürs Hacker-Theme */
+        }
+
+        .chess-square {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            position: relative;
+            overflow: visible;
+            font-size: 2.5vmin; 
+        }
+
+        .chess-piece {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 10px 15px;
-            min-width: 60px;
+            width: 100%;
+            height: 100%;
+            font-size: clamp(2.2rem, 5.5vmin, 4.2rem);
+            line-height: 1;
+            user-select: none;
+            pointer-events: none;
+            transform-origin: center;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+            z-index: 1;
         }
         
-        .dot {
-            width: 8px;
-            height: 8px;
-            background-color: #888;
+        .chess-piece:enter {
+          opacity: 0;
+          transform: scale(0.5);
+        }
+
+        .chess-piece:enter-active {
+          opacity: 1;
+          transform: scale(1);
+        }
+
+        .chess-piece::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 64%;
+            height: 64%;
             border-radius: 50%;
-            margin: 0 4px;
-            animation: bounce 1.4s infinite ease-in-out both;
-        }
-        
-        .dot:nth-child(1) { animation-delay: -0.32s; }
-        .dot:nth-child(2) { animation-delay: -0.16s; }
-        
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1.0); }
+            z-index: 0;
+            background: radial-gradient(closest-side, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.02) 60%, transparent 100%);
+            box-shadow: inset 0 -8px 14px rgba(0, 0, 0, 0.45);
+            pointer-events: none;
         }
 
-        .chat-input {
+        .white-piece {
+            color: #ffffff;
+            text-shadow: 0 6px 10px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255, 255, 255, 0.06);
+            -webkit-text-stroke: 0.6px rgba(0, 0, 0, 0.35);
+        }
+
+        .black-piece {
+            color: #0f0f0f;
+            text-shadow: 0 2px 4px rgba(255, 255, 255, 0.04);
+            -webkit-text-stroke: 0.6px rgba(255, 255, 255, 0.02);
+        }
+        
+        .chess-square:hover .chess-piece {
+            transform: translateY(-6%) scale(1.06);
+            text-shadow: 0 8px 14px rgba(0, 0, 0, 0.6);
+        }
+        
+        .last-move-from {
+          background-color: rgba(0, 255, 0, 0.3) !important;
+        }
+
+        .last-move-to {
+          background-color: rgba(255, 255, 0, 0.3) !important;
+        }
+
+        .chess-topbar {
             display: flex;
-            padding: 15px;
-            background-color: #f9f9f9;
-            border-top: 1px solid #e0e0e0;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            width: 100%;
+            max-width: 75vh;
+            padding: 0 5px;
+            box-sizing: border-box;
         }
 
-        .chat-input input {
-            flex-grow: 1;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 20px;
-            font-size: 1rem;
+        .chess-controls-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .elo-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        #elo-slider {
+            -webkit-appearance: none;
+            width: 120px;
+            height: 5px;
+            background: #003300;
             outline: none;
+            border: 1px solid #00FF00;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
         }
 
-        .chat-input button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            margin-left: 10px;
-            border-radius: 20px;
+        #elo-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            background: #00FF00;
             cursor: pointer;
-            font-size: 1rem;
-            transition: background-color 0.3s ease;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00FF00;
+        }
+        
+        #elo-value {
+             font-weight: bold;
+             min-width: 40px;
         }
 
-        .chat-input button:hover {
-            background-color: #0056b3;
+
+        #thinking-indicator {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: #00ff00;
+            padding: 15px 25px;
+            border-radius: 8px;
+            border: 2px solid #00ff00;
+            box-shadow: 0 0 20px #00ff00;
+            z-index: 1001;
+            font-size: 1.5rem;
+        }
+
+        .promotion-modal {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+        }
+
+        .promotion-modal.hidden {
+            display: none;
+        }
+
+        .promotion-box {
+            background: #0b0b0b;
+            border: 2px solid #00FF00;
+            box-shadow: 0 8px 30px rgba(0, 255, 0, 0.06);
+            padding: 18px;
+            border-radius: 10px;
+            text-align: center;
+            min-width: 260px;
+        }
+
+        .promotion-title {
+            font-family: 'VT323', monospace;
+            color: #00FF00;
+            margin-bottom: 10px;
+            font-size: 1.15rem;
+        }
+
+        .promotion-options {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .promote-btn {
+            background: transparent;
+            color: #00FF00;
+            border: 1px solid #00FF00;
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-family: 'VT323', monospace;
+            cursor: pointer;
+            transition: transform 120ms ease, box-shadow 120ms ease;
+        }
+
+        .promote-btn:hover {
+            transform: translateY(-6%);
+            box-shadow: 0 0 14px rgba(0, 255, 0, 0.08);
+        }
+        
+        @media (max-width: 420px) {
+            .chess-piece {
+                font-size: clamp(1.6rem, 6vmin, 2.8rem);
+            }
+
+            .chess-piece::before {
+                width: 72%;
+                height: 72%;
+            }
+        }
+
+
+        .chess-control {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+        }
+
+        #new-game-btn {
+            background: transparent;
+            color: #00FF00;
+            border: 2px solid #00FF00;
+            padding: 8px 16px;
+            font-size: 1.2rem;
+            font-family: 'VT323', monospace;
+            cursor: pointer;
+            text-shadow: 0 0 6px #00FF00;
+            box-shadow: 0 0 12px #00FF00;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        #new-game-btn:hover {
+            background: #001a00;
+            color: #00FF00;
+            box-shadow: 0 0 20px #00FF00;
+            transform: scale(1.1);
+        }
+
+
+        .light {
+            background-color: #555;
+        }
+
+        .dark {
+            background-color: #222;
+        }
+
+        .selected {
+            background-color: rgba(0, 204, 0, 0.7);
+        }
+
+        .highlight-move::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30%;
+            height: 30%;
+            background: rgba(0, 255, 0, 0.5);
+            border-radius: 50%;
+            box-shadow: 0 0 15px #00FF00;
+            animation: pulse 1s infinite alternate;
+        }
+        
+        .highlight-capture::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%;
+            height: 85%;
+            background: transparent;
+            border-radius: 50%;
+            box-sizing: border-box;
+            border: 4px dashed rgba(255, 0, 0, 0.7);
+            animation: pulse-red 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from {
+                opacity: 0.7;
+                transform: translate(-50%,-50%) scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: translate(-50%,-50%) scale(1.1);
+            }
+        }
+
+        @keyframes pulse-red {
+            from {
+                opacity: 0.7;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
     </style>
 </head>
+
 <body>
-    <div class="chat-container">
-        <div class="chat-header">
-            KI-Chatbot
+
+    <!-- ========================================================================= -->
+    <!-- Ladebildschirm-Struktur (Hacker-Animation) -->
+    <!-- ========================================================================= -->
+    <div id="loader">
+        <div id="sphere-container"></div>
+        <div id="loading-text">Starte System...</div>
+        <div id="loading-log"></div>
+        <div id="progress-bar-container">
+            <div id="progress-bar-fill"></div>
         </div>
-        <div class="chat-messages" id="messages">
-            <div class="message bot-message">Hallo! Ich bin ein KI-Assistent. Frag mich alles.</div>
-        </div>
-        <div class="chat-input">
-            <input type="text" id="userInput" placeholder="Schreibe eine Nachricht..." autofocus>
-            <button id="sendBtn" onclick="sendMessage()">Senden</button>
+        <div id="access-granted">
+            <span class="glitch-text">SYSTEM ONLINE</span>
         </div>
     </div>
 
-    <!-- Markdown-Bibliothek für die korrekte Formatierung -->
-    <script src="https://cdn.jsdelivr.net/npm/markdown-it@13.0.1/dist/markdown-it.min.js"></script>
+    <!-- ========================================================================= -->
+    <!-- DESKTOP-ANSICHT -->
+    <!-- ========================================================================= -->
+    <div id="desktop">
+        <div class="desktop-icon" id="console-icon">
+            <svg class="icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path
+                    d="M20 3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM4 19V5h16l-.001 14H4zm1-3h14v1H5v-1zm0-3h14v1H5v-1zm0-3h14v1H5v-1z" />
+            </svg>
+            <span class="icon-label">Konsole</span>
+        </div>
+        <div class="desktop-icon" id="chess-icon">
+            <svg class="icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path
+                    d="M16 8.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM12.5 10c-.28 0-.5.22-.5.5v5c0 .28.22.5.5.5h1c.28 0 .5-.22.5-.5v-5c0-.28-.22-.5-.5-.5h-1zM18 10.5c-.28 0-.5.22-.5.5v5c0 .28.22.5.5.5h1c.28 0 .5-.22.5-.5v-5c0-.28-.22-.5-.5-.5h-1zM6 10.5c-.28 0-.5.22-.5.5v5c0 .28.22.5.5.5h1c.28 0 .5-.22.5-.5v-5c0-.28-.22-.5-.5-.5H6zM15.5 10c-.28 0-.5.22-.5.5v5c0 .28.22.5.5.5h1c.28 0 .5-.22.5-.5v-5c0-.28-.22-.5-.5-.5h-1zM11.5 10c-.28 0-.5.22-.5.5v5c0 .28.22.5.5.5h1c.28 0 .5-.22.5-.5v-5c0-.28-.22-.5-.5-.5h-1zM9 10.5c-.28 0-.5.22-.5.5v5c0 .28.22.5.5.5h1c.28 0 .5-.22.5-.5v-5c0-.28-.22-.5-.5-.5H9zM12 21c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" />
+            </svg>
+            <span class="icon-label">Schach</span>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- Haupt-Button zum Öffnen neuer Terminals -->
+    <!-- ========================================================================= -->
+    <button id="newTerminalBtn">[ + ]</button>
+
+    <!-- ========================================================================= -->
+    <!-- JAVASCRIPT FÜR LADEANIMATION, CHAT-LOGIK & MULTIPLE FENSTER -->
+    <!-- ========================================================================= -->
     <script>
-        const messagesDiv = document.getElementById('messages');
-        const userInput = document.getElementById('userInput');
-        const sendBtn = document.getElementById('sendBtn');
-        
-        // Holt den API-Schlüssel aus den Umgebungsvariablen
-        const apiKey = "DEIN_API_SCHLÜSSEL";
+        // === Globale DOM-Elementreferenzen ===
+        const loader = document.getElementById('loader');
+        const sphereContainer = document.getElementById('sphere-container');
+        const loadingText = document.getElementById('loading-text');
+        const loadingLog = document.getElementById('loading-log');
+        const progressBarContainer = document.getElementById('progress-bar-container');
+        const progressBar = document.getElementById('progress-bar-fill');
+        const accessGranted = document.getElementById('access-granted');
+        const newTerminalBtn = document.getElementById('newTerminalBtn');
+        const desktop = document.getElementById('desktop');
+        const consoleIcon = document.getElementById('console-icon');
+        const chessIcon = document.getElementById('chess-icon');
 
-        // Initialisiere die Markdown-Bibliothek
-        const md = new markdownit();
+        // === API-Konstanten und Chat-Status ===
+        const apiKey = "AIzaSyB-0z8e59quUM-EaRl0tGiK-5eVaSUq3dQ";
+        let highestZIndex = 2; // Start-Z-Index für Terminals
 
-        // Funktion, die eine Nachricht im Chat anzeigt
-        function displayMessage(message, sender) {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
-            
-            // Verwende innerHTML, um Markdown zu rendern
-            if (sender === 'bot') {
-                messageElement.innerHTML = md.render(message);
-            } else {
-                messageElement.textContent = message;
+        // =========================================================================
+        // THREE.JS SETUP FÜR 3D-LADEANIMATION
+        // =========================================================================
+        let scene, camera, renderer, particles, particleMaterial, stars;
+        let wireframeGlobe;
+
+        const particleInfo = [];
+        const chaosBounds = 10;
+        const sphereRadius = 2.0;
+        const particleCount = 3500;
+
+        let animationPhase = 'chaos';
+        let clock, phaseStartTime, orbitStartTime;
+
+        /**
+         * Initialisiert die three.js-Szene und erstellt die 3D-Objekte.
+         */
+        function init3D() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 2000);
+            camera.position.z = 9.5;
+
+            renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            sphereContainer.appendChild(renderer.domElement);
+
+            const globeGeometry = new THREE.IcosahedronGeometry(sphereRadius, 4);
+            const globeMaterial = new THREE.MeshBasicMaterial({
+                color: 0x00ff00,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.0
+            });
+            wireframeGlobe = new THREE.Mesh(globeGeometry, globeMaterial);
+            scene.add(wireframeGlobe);
+
+            const positions = new Float32Array(particleCount * 3);
+            const tempSphere = new THREE.SphereGeometry(sphereRadius, 32, 32);
+            const surfaceVerts = tempSphere.attributes.position.array;
+
+            for (let i = 0; i < particleCount; i++) {
+                const x = (Math.random() - 0.5) * chaosBounds * 2;
+                const y = (Math.random() - 0.5) * chaosBounds * 2;
+                const z = (Math.random() - 0.5) * chaosBounds * 2;
+                positions[i * 3] = x; positions[i * 3 + 1] = y; positions[i * 3 + 2] = z;
+
+                const vi = Math.floor(Math.random() * (surfaceVerts.length / 3));
+                const target = new THREE.Vector3(
+                    surfaceVerts[vi * 3],
+                    surfaceVerts[vi * 3 + 1],
+                    surfaceVerts[vi * 3 + 2]
+                );
+
+                const innerScale = 0.28 + Math.random() * 0.32;
+                const innerTarget = target.clone().multiplyScalar(innerScale);
+
+                const velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.04,
+                    (Math.random() - 0.5) * 0.04,
+                    (Math.random() - 0.5) * 0.04
+                );
+
+                particleInfo.push({
+                    target,
+                    innerTarget,
+                    velocity,
+                    state: 'idle',
+                    stagingPoint: null
+                });
             }
 
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particleMaterial = new THREE.PointsMaterial({color: 0x00ff00, size: 0.03, transparent: true, opacity: 0.9});
+            particles = new THREE.Points(geometry, particleMaterial);
+            scene.add(particles);
+
+            const starsGeo = new THREE.BufferGeometry();
+            const starPositions = [];
+            for (let i = 0; i < 3000; i++) {
+                starPositions.push((Math.random() - 0.5) * 2000, (Math.random() - 0.5) * 2000, (Math.random() - 0.5) * 2000);
+            }
+            starsGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPositions, 3));
+            const starsMat = new THREE.PointsMaterial({color: 0x00ff00, size: 1.5, transparent: true, opacity: 0.45});
+            stars = new THREE.Points(starsGeo, starsMat);
+            scene.add(stars);
+
+            clock = new THREE.Clock();
+            phaseStartTime = clock.getElapsedTime();
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        /**
+         * Animationsschleife für die 3D-Szene.
+         */
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            const dt = clock.getDelta();
+            const t = clock.getElapsedTime();
+
+            const positions = particles.geometry.attributes.position.array;
+
+            switch (animationPhase) {
+                case 'chaos':
+                    for (let i = 0; i < particleCount; i++) {
+                        positions[i * 3] += particleInfo[i].velocity.x;
+                        positions[i * 3 + 1] += particleInfo[i].velocity.y;
+                        positions[i * 3 + 2] += particleInfo[i].velocity.z;
+
+                        if (Math.abs(positions[i * 3]) > chaosBounds) particleInfo[i].velocity.x *= -1;
+                        if (Math.abs(positions[i * 3 + 1]) > chaosBounds) particleInfo[i].velocity.y *= -1;
+                        if (Math.abs(positions[i * 3 + 2]) > chaosBounds) particleInfo[i].velocity.z *= -1;
+                    }
+                    if (t - phaseStartTime > 2.8) {
+                        animationPhase = 'converging';
+                        phaseStartTime = t;
+                    }
+                    break;
+
+                case 'converging':
+                    let settledCount = 0;
+                    for (let i = 0; i < particleCount; i++) {
+                        const px = positions[i * 3], py = positions[i * 3 + 1], pz = positions[i * 3 + 2];
+                        const p = new THREE.Vector3(px, py, pz);
+                        const target = particleInfo[i].target;
+
+                        p.lerp(target, 0.045 + Math.random() * 0.01);
+                        positions[i * 3] = p.x; positions[i * 3 + 1] = p.y; positions[i * 3 + 2] = p.z;
+                        if (p.distanceTo(target) < 0.09) settledCount++;
+                    }
+                    const settledPerc = settledCount / particleCount;
+                    wireframeGlobe.material.opacity = Math.min(1, settledPerc * 1.6);
+                    if (settledPerc > 0.96 || (clock.getElapsedTime() - phaseStartTime > 7.5)) {
+                        prepareXInflow();
+                        animationPhase = 'xInflow';
+                        phaseStartTime = clock.getElapsedTime();
+                    }
+                    break;
+
+                case 'xInflow':
+                    let inflowSettled = 0;
+                    for (let i = 0; i < particleCount; i++) {
+                        const idx = i * 3;
+                        const p = new THREE.Vector3(positions[idx], positions[idx + 1], positions[idx + 2]);
+                        const info = particleInfo[i];
+                        const dist = p.length();
+                        if (!info.state || info.state === 'idle') {
+                            if (dist > sphereRadius + 0.06) {
+                                info.state = 'toStaging';
+                                info.stagingPoint = computeStagingPoint(p);
+                            } else {
+                                info.state = 'toInner';
+                            }
+                        }
+                        if (info.state === 'toStaging') {
+                            const sp = info.stagingPoint;
+                            p.lerp(sp, 0.10 + Math.random() * 0.03);
+                            positions[idx] = p.x; positions[idx + 1] = p.y; positions[idx + 2] = p.z;
+                            if (p.distanceTo(sp) < 0.12) {
+                                info.state = 'toInner';
+                            }
+                        } else if (info.state === 'toInner') {
+                            const inner = info.innerTarget;
+                            const toInner = inner.clone().sub(p);
+                            const swirl = new THREE.Vector3(-toInner.y, toInner.x, toInner.z * 0.08).multiplyScalar(0.004 + (i % 7) * 0.0002);
+                            p.add(swirl);
+                            p.lerp(inner, 0.038 + Math.random() * 0.012);
+                            positions[idx] = p.x; positions[idx + 1] = p.y; positions[idx + 2] = p.z;
+                            if (p.distanceTo(inner) < 0.055) {
+                                info.state = 'settled';
+                            }
+                        } else if (info.state === 'settled') {
+                            inflowSettled++;
+                        }
+                    }
+                    wireframeGlobe.material.opacity = Math.max(0.18, 1.0 - inflowSettled / particleCount * 0.9);
+                    if (inflowSettled / particleCount > 0.98 || (clock.getElapsedTime() - phaseStartTime > 12.0)) {
+                        animationPhase = 'orbit';
+                        orbitStartTime = clock.getElapsedTime();
+                        phaseStartTime = clock.getElapsedTime();
+                    }
+                    break;
+
+                case 'orbit':
+                    const elapsedOrbit = (clock.getElapsedTime() - orbitStartTime);
+                    let doneCount = 0;
+                    for (let i = 0; i < particleCount; i++) {
+                        const idx = i * 3;
+                        const p = new THREE.Vector3(positions[idx], positions[idx + 1], positions[idx + 2]);
+                        const baseAngle = (i / particleCount) * Math.PI * 2;
+                        const angle = baseAngle + elapsedOrbit * 0.6 + (i % 137) * 0.003;
+                        const orbitRadius = sphereRadius * (1.6 + 0.6 * Math.sin(elapsedOrbit * 0.9 + i * 0.017));
+                        const ox = Math.cos(angle) * orbitRadius;
+                        const oz = Math.sin(angle) * orbitRadius;
+                        const oy = Math.sin(angle * 2 + i * 0.01) * 0.55;
+                        const orbitTarget = new THREE.Vector3(ox, oy, oz);
+                        p.lerp(orbitTarget, 0.06 + (i % 11) * 0.0014);
+                        positions[idx] = p.x; positions[idx + 1] = p.y; positions[idx + 2] = p.z;
+                        if (p.length() > sphereRadius * 1.55) doneCount++;
+                    }
+                    wireframeGlobe.material.opacity = 0.95;
+                    if (doneCount / particleCount > 0.98) {
+                        // Finale Phase erreicht, bleibt in diesem Zustand
+                    }
+                    break;
+            }
+
+            wireframeGlobe.rotation.y += 0.0025;
+            if (stars) stars.rotation.y += 0.0001;
+
+            particles.geometry.attributes.position.needsUpdate = true;
+            renderer.render(scene, camera);
+        }
+
+        /**
+         * Bereitet Partikel auf die X-Inflow-Phase vor.
+         */
+        function prepareXInflow() {
+            for (let i = 0; i < particleCount; i++) {
+                const idx = i * 3;
+                const pos = new THREE.Vector3(
+                    particles.geometry.attributes.position.array[idx],
+                    particles.geometry.attributes.position.array[idx + 1],
+                    particles.geometry.attributes.position.array[idx + 2]
+                );
+                const dist = pos.length();
+                if (dist > sphereRadius + 0.06) {
+                    particleInfo[i].state = 'toStaging';
+                    particleInfo[i].stagingPoint = computeStagingPoint(pos);
+                } else {
+                    particleInfo[i].state = 'toInner';
+                    particleInfo[i].stagingPoint = null;
+                }
+            }
+        }
+
+        /**
+         * Berechnet den Staging-Punkt für die X-Inflow-Animation.
+         */
+        function computeStagingPoint(currentPos) {
+            const diags = [
+                new THREE.Vector3(1, 1, 0).normalize(),
+                new THREE.Vector3(-1, 1, 0).normalize(),
+                new THREE.Vector3(1, -1, 0).normalize(),
+                new THREE.Vector3(-1, -1, 0).normalize()
+            ];
+            const proj = new THREE.Vector3(currentPos.x, currentPos.y, 0);
+            let bestIdx = 0;
+            let bestDot = -Infinity;
+            const projNorm = proj.length() > 0.0001 ? proj.clone().normalize() : new THREE.Vector3(1, 1, 0).normalize();
+            for (let j = 0; j < diags.length; j++) {
+                const d = diags[j];
+                const dot = projNorm.dot(d);
+                if (dot > bestDot) {bestDot = dot; bestIdx = j;}
+            }
+            const dist = sphereRadius * (1.25 + Math.random() * 0.45);
+            const base = diags[bestIdx].clone().multiplyScalar(dist);
+            const zVar = (currentPos.z * 0.18) + (Math.random() - 0.5) * 0.35;
+            base.z = zVar;
+            return base;
+        }
+
+        function onWindowResize() {
+            const w = window.innerWidth, h = window.innerHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+        }
+
+        // =========================================================================
+        // CHAT-LOGIK
+        // =========================================================================
+        function displayMessage(messagesDiv, message, sender) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('log-entry');
+            if (sender === 'user') {
+                const userLine = document.createElement('span');
+                userLine.classList.add('user-input-line');
+                userLine.textContent = `> ${message}`;
+                messageElement.appendChild(userLine);
+            } else {
+                messageElement.innerHTML = `> ${message.replace(/\n/g, '<br>')}`;
+            }
             messagesDiv.appendChild(messageElement);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
-        
-        // Funktion zur Anzeige eines Lade-Spinners
-        function displayLoading() {
-            const loadingElement = document.createElement('div');
-            loadingElement.id = 'loadingSpinner';
-            loadingElement.classList.add('message', 'bot-message', 'loading-spinner');
-            loadingElement.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
-            messagesDiv.appendChild(loadingElement);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            return loadingElement;
-        }
-        
-        // Funktion, um den Spinner zu entfernen und durch Text zu ersetzen
-        function hideLoading(spinnerElement, message) {
-            // Verwende innerHTML, um die formatierte Antwort zu rendern
-            spinnerElement.innerHTML = md.render(message);
-            spinnerElement.classList.remove('loading-spinner');
-            spinnerElement.id = '';
-        }
 
-        // Funktion zur Kommunikation mit der Gemini API
-        async function getGeminiResponse(userMessage) {
-            if (!apiKey || apiKey === "AIzaSyB-0z8e59quUM-EaRl0tGiK-5eVaSUq3dQ") {
-                 throw new Error("API-Schlüssel fehlt. Bitte trage deinen Schlüssel in den Umgebungsvariablen ein.");
+        async function getGeminiResponse(userPrompt) {
+            if (!apiKey) {
+                console.error("API-Schlüssel fehlt.");
+                return "Entschuldigung, es gab einen Konfigurationsfehler.";
             }
-
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-            
             const payload = {
-                contents: [{ parts: [{ text: userMessage }] }],
-                tools: [{ "google_search": {} }],
-                systemInstruction: {
-                    parts: [{ text: "Du bist ein KI-Assistent, der von Google entwickelt wurde. Du bist hilfreich, freundlich, sachkundig und sprichst Deutsch. Antworte in einem professionellen, aber dennoch lockeren und verständlichen Ton. Verwende Markdown für Hervorhebungen wie **fett** und *kursiv*. Verwende auch einfache Listen, um Informationen klar zu strukturieren." }]
-                }
+                contents: [{role: 'user', parts: [{text: userPrompt}]}],
+                tools: [{"google_search": {}}],
+                systemInstruction: {parts: [{text: "Du bist ein KI-Assistent von Google. Antworte hilfreich und freundlich auf Deutsch. Formatiere Antworten mit Markdown."}]}
             };
-
             try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`API-Fehler: ${response.status} ${response.statusText}`);
-                }
-
+                const response = await fetch(apiUrl, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)});
+                if (!response.ok) throw new Error(`API-Fehler: ${response.status}`);
                 const result = await response.json();
-                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-                
-                if (text) {
-                    return text;
-                } else {
-                    return "Entschuldigung, ich konnte keine Antwort generieren.";
-                }
-
+                return result?.candidates?.[0]?.content?.parts?.[0]?.text || "Keine Antwort erhalten.";
             } catch (error) {
                 console.error("Fehler beim API-Aufruf:", error);
-                return "Entschuldigung, es gab einen Fehler. Bitte versuche es später noch einmal.";
+                return "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.";
             }
         }
 
-        // Funktion, die eine Nachricht sendet
-        async function sendMessage() {
-            const message = userInput.value;
-            if (message.trim() === '') {
-                return;
-            }
+        async function sendMessage(terminalId) {
+            const terminal = document.getElementById(terminalId);
+            const userInput = terminal.querySelector('.terminal-input');
+            const messagesDiv = terminal.querySelector('.terminal-output');
+            const message = userInput.value.trim();
+            if (!message) return;
 
-            // Deaktiviere das Eingabefeld und den Senden-Button während der Verarbeitung
+            displayMessage(messagesDiv, message, 'user');
             userInput.disabled = true;
-            sendBtn.disabled = true;
-
-            // Zeige die Nachricht des Benutzers an
-            displayMessage(message, 'user');
             userInput.value = '';
 
-            // Zeige den Lade-Spinner an
-            const loadingSpinner = displayLoading();
-
             try {
-                // Warte auf die Antwort der KI-API
                 const botResponse = await getGeminiResponse(message);
-                
-                // Ersetze den Spinner durch die Antwort
-                hideLoading(loadingSpinner, botResponse);
+                displayMessage(messagesDiv, botResponse, 'bot');
             } catch (error) {
-                // Zeige eine Fehlermeldung, falls der API-Aufruf fehlschlägt
-                hideLoading(loadingSpinner, "Entschuldigung, es gab einen Fehler.");
+                console.error("Fehler beim Senden der Nachricht:", error);
+                displayMessage(messagesDiv, "Ein Fehler ist aufgetreten.", 'bot');
             } finally {
-                // Re-aktiviere das Eingabefeld und den Senden-Button
                 userInput.disabled = false;
-                sendBtn.disabled = false;
                 userInput.focus();
             }
         }
 
-        // Füge einen Event-Listener hinzu, um auf die Enter-Taste zu reagieren
-        userInput.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter') {
-                sendMessage();
+        // =========================================================================
+        // MEHRFACHTERMINAL-LOGIK
+        // =========================================================================
+        let windowCounter = 0;
+
+        /**
+         * Erstellt ein neues Fenster.
+         */
+            function createWindow(title, contentHTML, initialSize = {width: '700px', height: '500px'}) {
+                windowCounter++;
+                const windowId = `window-${windowCounter}`;
+
+                const newWindow = document.createElement('div');
+                newWindow.id = windowId;
+                newWindow.className = 'terminal-window';
+                newWindow.style.zIndex = ++highestZIndex;
+                newWindow.style.width = initialSize.width;
+                newWindow.style.height = initialSize.height;
+
+                const offsetX = 50 + (windowCounter * 20);
+                const offsetY = 50 + (windowCounter * 20);
+                newWindow.style.left = `${offsetX}px`;
+                newWindow.style.top = `${offsetY}px`;
+
+                newWindow.innerHTML = `
+                    <div class="terminal-header">
+                        <h2>${title} ${windowCounter}</h2>
+                        <button class="close-btn">[ x ]</button>
+                    </div>
+                    ${contentHTML}
+                `;
+
+                document.body.appendChild(newWindow);
+
+                // === Desktop ausblenden beim Öffnen ===
+                const desktop = document.getElementById('desktop');
+                if (desktop) {
+                    desktop.style.display = 'none';
+                }
+
+                const header = newWindow.querySelector('.terminal-header');
+                const closeBtn = newWindow.querySelector('.close-btn');
+
+                newWindow.addEventListener('mousedown', () => {
+                    newWindow.style.zIndex = ++highestZIndex;
+                });
+
+                let isDragging = false;
+                let offsetX_drag, offsetY_drag;
+
+                header.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    offsetX_drag = e.clientX - newWindow.offsetLeft;
+                    offsetY_drag = e.clientY - newWindow.offsetTop;
+                    header.style.cursor = 'grabbing';
+                    document.body.style.userSelect = 'none'; 
+                });
+
+                document.addEventListener('mousemove', (e) => {
+                    if (isDragging) {
+                        const newX = e.clientX - offsetX_drag;
+                        const newY = e.clientY - offsetY_drag;
+                        newWindow.style.left = `${newX}px`;
+                        newWindow.style.top = `${newY}px`;
+                    }
+                });
+
+                document.addEventListener('mouseup', () => {
+                    if (isDragging) {
+                        isDragging = false;
+                        header.style.cursor = 'grab';
+                        document.body.style.userSelect = 'auto';
+                    }
+                });
+
+                // === Close-Button mit Desktop-Rückkehr ===
+                closeBtn.addEventListener('click', () => {
+                    newWindow.remove();
+
+                    // Desktop nur anzeigen, wenn kein anderes Fenster mehr offen ist
+                    if (document.querySelectorAll('.terminal-window').length === 0) {
+                        if (desktop) {
+                            desktop.style.display = 'block';
+                        }
+                    }
+                });
+
+                return newWindow;
             }
+
+
+
+
+        /**
+         * Erstellt ein neues Terminal-Fenster.
+         */
+        function createTerminalWindow() {
+            const terminalContent = `
+                <div class="terminal-output">
+                    <div class="log-entry">> Initialisiere Schnittstelle... [OK]</div>
+                    <div class="log-entry">> Lade Module... [OK]</div>
+                </div>
+                <div class="terminal-input-container">
+                    <span class="prompt-symbol">></span>
+                    <input type="text" class="terminal-input" placeholder="Geben Sie Ihren Befehl ein..." autofocus>
+                    <button class="sendBtn">Senden</button>
+                </div>
+            `;
+            const terminalWindow = createWindow('TERMINAL', terminalContent);
+            const userInput = terminalWindow.querySelector('.terminal-input');
+            const sendBtn = terminalWindow.querySelector('.sendBtn');
+
+            sendBtn.addEventListener('click', () => {
+                sendMessage(terminalWindow.id);
+            });
+            userInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage(terminalWindow.id);
+                }
+            });
+
+            userInput.focus();
+        }
+
+        // =========================================================================
+        // ROBUSTER SKRIPT-LADER UND SCHACH-LOGIK
+        // =========================================================================
+        
+        let chessScriptsLoaded = false;
+
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                if (document.querySelector(`script[src="${src}"]`)) {
+                    resolve();
+                    return;
+                }
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error(`Konnte Skript nicht laden: ${src}`));
+                document.head.appendChild(script);
+            });
+        }
+
+        async function createChessWindow() {
+            const initialContent = `
+                <div class="chess-board-container" style="text-align: center; font-size: 1.5rem; padding: 40px;">
+                    <p>Lade Schach-Module...</p>
+                </div>
+            `;
+            const chessWindow = createWindow('Schach vs. Stockfish', initialContent, { width: 'auto', height: 'auto' });
+            chessWindow.classList.add('chess-window');
+            chessWindow.style.resize = 'none';
+            chessWindow.style.left = "50%";
+            chessWindow.style.top = "50%";
+            chessWindow.style.transform = "translate(-50%, -50%)";
+
+            const loaderDiv = chessWindow.querySelector('.chess-board-container');
+
+            try {
+                if (!chessScriptsLoaded) {
+                    loaderDiv.innerHTML = "<p style='color:#00FF00;'>Lade Schach-Module...</p>";
+                    await loadScript("https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js");
+                    chessScriptsLoaded = true;
+                }
+                loaderDiv.innerHTML = "<p style='color:#00FF00;'>Module wurden geladen ✅</p>";
+                setTimeout(() => loaderDiv.remove(), 1500); // Nachricht nach 1,5s ausblenden
+            } catch (error) {
+                console.error(error);
+                loaderDiv.innerHTML = '<p style="color: #FF0000;">Fehler beim Laden der Engine.</p>';
+                return;
+            }
+
+
+            const gameContentHTML = `
+                <div id="thinking-indicator">Stockfish denkt nach...</div>
+                <div class="chess-board-container">
+                    <div class="chess-topbar">
+                        <div id="chess-status" class="chess-status">Weiß am Zug</div>
+                        <div class="chess-controls-right">
+                            <div class="elo-control">
+                                <label for="elo-slider">ELO: <span id="elo-value">1350</span></label>
+                                <input type="range" id="elo-slider" min="0" max="40" value="10" title="Stockfish Skill Level">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chess-board"></div>
+                    <div class="chess-control">
+                        <button id="new-game-btn">[ ♻ Neues Spiel ]</button>
+                    </div>
+                </div>
+                <div id="promotion-modal" class="promotion-modal hidden" aria-hidden="true">
+                    <div class="promotion-box">
+                        <div class="promotion-title">Bauernumwandlung</div>
+                        <div class="promotion-options">
+                            <button class="promote-btn" data-piece="q">♕ Dame</button>
+                            <button class="promote-btn" data-piece="r">♖ Turm</button>
+                            <button class="promote-btn" data-piece="b">♗ Läufer</button>
+                            <button class="promote-btn" data-piece="n">♘ Springer</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            chessWindow.querySelector('.terminal-header').insertAdjacentHTML('afterend', gameContentHTML);
+            // chessWindow.querySelector('.chess-board-container').remove(); // nicht löschen!
+
+            const boardDiv = chessWindow.querySelector('.chess-board');
+            const statusDiv = chessWindow.querySelector('#chess-status');
+            const newGameBtn = chessWindow.querySelector('#new-game-btn');
+            const thinkingIndicator = chessWindow.querySelector('#thinking-indicator');
+            const promotionModal = chessWindow.querySelector('#promotion-modal');
+            const eloSlider = chessWindow.querySelector('#elo-slider');
+            const eloValueSpan = chessWindow.querySelector('#elo-value');
+
+            const pieceEmojis = {
+                'w': {'p': '♙','r': '♖','n': '♘','b': '♗','q': '♕','k': '♔'},
+                'b': {'p': '♟','r': '♜','n': '♞','b': '♝','q': '♛','k': '♚'}
+            };
+
+            let game = new Chess();
+            let stockfish = new Worker("js/stockfish.js");
+
+            let selectedSquare = null;
+            let pendingPromotion = null;
+
+            function initializeGame() {
+                game.reset();
+                selectedSquare = null;
+                pendingPromotion = null;
+                stockfish.postMessage('ucinewgame');
+                renderBoard();
+                updateStatus();
+            }
+
+            function renderBoard() {
+                boardDiv.innerHTML = '';
+                const boardData = game.board();
+                const history = game.history({ verbose: true });
+                const lastMove = history.length > 0 ? history[history.length - 1] : null;
+
+                for (let row = 0; row < 8; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        const squareEl = document.createElement('div');
+                        const isLight = (row + col) % 2 === 0;
+                        squareEl.classList.add('chess-square', isLight ? 'light' : 'dark');
+                        const squareName = String.fromCharCode('a'.charCodeAt(0) + col) + (8 - row);
+                        squareEl.dataset.square = squareName;
+
+                        if (lastMove) {
+                            if (lastMove.from === squareName) squareEl.classList.add('last-move-from');
+                            if (lastMove.to === squareName) squareEl.classList.add('last-move-to');
+                        }
+
+                        const piece = boardData[row][col];
+                        if (piece) {
+                            const pieceSpan = document.createElement('span');
+                            pieceSpan.classList.add('chess-piece', piece.color === 'w' ? 'white-piece' : 'black-piece');
+                            pieceSpan.textContent = pieceEmojis[piece.color][piece.type];
+                            squareEl.appendChild(pieceSpan);
+                        }
+                        squareEl.addEventListener('click', handleSquareClick);
+                        boardDiv.appendChild(squareEl);
+                    }
+                }
+            }
+
+            function updateStatus() {
+                let statusText = game.turn() === 'w' ? 'Weiß am Zug' : 'Schwarz (Bot) am Zug';
+
+                if (game.in_checkmate()) {
+                    statusText = `Schachmatt! ${game.turn() === 'w' ? 'Schwarz' : 'Weiß'} gewinnt.`;
+                } else if (game.in_stalemate() || game.in_threefold_repetition() || game.in_draw()) {
+                    statusText = 'Patt! Unentschieden.';
+                } else if (game.in_check()) {
+                    statusText += ' (im Schach)';
+                }
+
+                statusDiv.textContent = statusText;
+            }
+
+            function handleSquareClick(event) {
+                if (game.turn() !== 'w' || game.game_over()) return;
+
+                const clickedSquareName = event.currentTarget.dataset.square;
+
+                if (selectedSquare) {
+                    const from = selectedSquare.dataset.square;
+                    const to = clickedSquareName;
+
+                    const moves = game.moves({ square: from, verbose: true });
+                    const move = moves.find(m => m.to === to);
+
+                    if (move) {
+                        if (move.flags.includes('p')) {
+                           pendingPromotion = { from, to };
+                           showPromotionModal();
+                        } else {
+                           makeMove(from, to);
+                        }
+                    }
+
+                    selectedSquare.classList.remove('selected');
+                    document.querySelectorAll('.highlight-move, .highlight-capture').forEach(sq => {
+                        sq.classList.remove('highlight-move', 'highlight-capture');
+                    });
+                    selectedSquare = null;
+
+                } else {
+                    const piece = game.get(clickedSquareName);
+                    if (piece && piece.color === 'w') {
+                        selectedSquare = event.currentTarget;
+                        selectedSquare.classList.add('selected');
+                        highlightValidMoves(clickedSquareName);
+                    }
+                }
+            }
+
+            function makeMove(from, to, promotion) {
+                const moveResult = game.move({ from, to, promotion });
+                if (moveResult) {
+                    renderBoard();
+                    updateStatus();
+                    if (!game.game_over()) {
+                        setTimeout(makeBotMove, 250);
+                    }
+                }
+                return moveResult;
+            }
+
+            function highlightValidMoves(square) {
+                const moves = game.moves({ square: square, verbose: true });
+                moves.forEach(move => {
+                    const targetSquare = boardDiv.querySelector(`[data-square="${move.to}"]`);
+                    if (targetSquare) {
+                        targetSquare.classList.add(move.flags.includes('c') ? 'highlight-capture' : 'highlight-move');
+                    }
+                });
+            }
+
+            function showPromotionModal() {
+                promotionModal.classList.remove('hidden');
+                promotionModal.setAttribute('aria-hidden', 'false');
+
+                promotionModal.querySelectorAll('.promote-btn').forEach(btn => {
+                    btn.onclick = () => {
+                        if (!pendingPromotion) return;
+                        const { from, to } = pendingPromotion;
+                        makeMove(from, to, btn.dataset.piece);
+                        promotionModal.classList.add('hidden');
+                        promotionModal.setAttribute('aria-hidden', 'true');
+                        pendingPromotion = null;
+                    };
+                });
+            }
+
+            function makeBotMove() {
+                if (game.turn() === 'b' && !game.game_over()) {
+                    thinkingIndicator.style.display = 'block';
+                    const skillLevel = Math.min(20, parseInt(eloSlider.value, 10)); // max 20 für Stockfish
+                    stockfish.postMessage(`setoption name Skill Level value ${skillLevel}`);
+                    stockfish.postMessage(`position fen ${game.fen()}`);
+                    stockfish.postMessage('go depth 15');
+                }
+            }
+
+            stockfish.onmessage = function(event) {
+                const message = event.data || event;
+                if (typeof message === 'string' && message.startsWith('bestmove')) {
+                    const move = message.split(' ')[1];
+                    const from = move.substring(0, 2);
+                    const to = move.substring(2, 4);
+                    const promotion = move.length > 4 ? move.substring(4) : undefined;
+
+                    game.move({ from, to, promotion });
+
+                    thinkingIndicator.style.display = 'none';
+                    renderBoard();
+                    updateStatus();
+                }
+            };
+
+            if (eloSlider && eloValueSpan) {
+                eloSlider.addEventListener('input', (e) => {
+                    const sliderValue = parseInt(e.target.value, 10);
+                    const minElo = 800;
+                    const maxElo = 3500;
+                    const elo = Math.round(minElo + (sliderValue / 40) * (maxElo - minElo));
+                    eloValueSpan.textContent = elo;
+                });
+            }
+
+            if (newGameBtn) {
+                newGameBtn.addEventListener('click', initializeGame);
+            }
+
+            initializeGame();
+        }
+
+
+
+
+
+        // =========================================================================
+        // BOOT-SEQUENZ
+        // =========================================================================
+        const loadingPhases = [
+            {title: "PHASE 1: SYSTEM-KERNEL LADEN", logs: [{text: "Initialisiere Core-Module...", delay: 600, status: "OK"}, {text: "Prüfe Speicherintegrität...", delay: 500, status: "OK"}], progress: 33},
+            {title: "PHASE 2: NETZWERK-PROTOKOLLE", logs: [{text: "WARNUNG: Fremdzugriff auf Port 80...", delay: 800, status: "WARN"}, {text: "Isoliere verdächtige Verbindung...", delay: 1000, status: "INFO"}, {text: "Netzwerk gesichert.", delay: 400, status: "SUCCESS"}], progress: 66},
+            {title: "PHASE 3: KERNKOMPONENTEN STARTEN", logs: [{text: "Rendere Partikel-Matrix...", delay: 700, status: "OK"}, {text: "Berechne Vektoren...", delay: 900, status: "OK"}], progress: 100, action: () => {animationPhase = 'xInflow';}}
+        ];
+
+        async function runBootSequence() {
+            loadingLog.style.opacity = 1;
+            progressBarContainer.style.opacity = 1;
+            let currentProgress = 0;
+            for (const phase of loadingPhases) {
+                loadingText.textContent = phase.title;
+                for (const log of phase.logs) {
+                    const newLogLine = document.createElement('p');
+                    newLogLine.classList.add('log-line');
+                    newLogLine.innerHTML = `> <span class="status-${log.status.toLowerCase()}">[ ${log.status} ]</span> ${log.text}`;
+                    loadingLog.appendChild(newLogLine);
+                    loadingLog.scrollTop = loadingLog.scrollHeight;
+                    await new Promise(r => setTimeout(r, log.delay));
+                }
+                if (phase.action) phase.action();
+                updateProgressBar(currentProgress, phase.progress, 500);
+                currentProgress = phase.progress;
+                await new Promise(r => setTimeout(r, 800));
+            }
+            await new Promise(r => setTimeout(r, 2500));
+            showDesktop();
+        }
+
+        function updateProgressBar(startWidth, targetWidth, duration) {
+            const startTime = performance.now();
+            function step(timestamp) {
+                const elapsed = timestamp - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeProgress = 0.5 - 0.5 * Math.cos(progress * Math.PI);
+                progressBar.style.width = (startWidth + (targetWidth - startWidth) * easeProgress) + '%';
+                if (progress < 1) window.requestAnimationFrame(step);
+            }
+            window.requestAnimationFrame(step);
+        }
+
+        /**
+         * Zeigt den Desktop-Bildschirm an und blendet den Ladebildschirm aus.
+         */
+        async function showDesktop() {
+            loadingText.style.opacity = 0;
+            accessGranted.style.display = 'block';
+            accessGranted.style.opacity = 1;
+            await new Promise(r => setTimeout(r, 2000));
+            accessGranted.style.opacity = 0;
+            await new Promise(r => setTimeout(r, 1000));
+            loader.style.display = 'none';
+            desktop.style.display = 'flex';
+        }
+
+        // --- Event-Listener und Initialisierung ---
+        newTerminalBtn.addEventListener('click', () => createTerminalWindow());
+        consoleIcon.addEventListener('click', () => {
+            desktop.style.display = 'none';
+            newTerminalBtn.style.display = 'block';
+            createTerminalWindow();
         });
+        chessIcon.addEventListener('click', () => {
+            desktop.style.display = 'none';
+            newTerminalBtn.style.display = 'block';
+            createChessWindow();
+        });
+        window.onload = () => {init3D(); animate3D(); runBootSequence();};
     </script>
 </body>
+
 </html>
+
