@@ -1647,7 +1647,17 @@
                     const elo = Math.round(minElo + (sliderValue / 40) * (maxElo - minElo));
                     eloValueSpan.textContent = elo;
                 });
+                eloSlider.addEventListener('change', (e) => {
+                    const sliderVal = Math.min(40, parseInt(e.target.value, 10) || 10);
+                    const skillLevel = Math.min(20, sliderVal);
+                    try {
+                        stockfish.postMessage(`setoption name Skill Level value ${skillLevel}`);
+                    } catch (err) {}
+                    initializeGame();
+                });
+
             }
+            
 
             if (newGameBtn) {
                 newGameBtn.addEventListener('click', initializeGame);
