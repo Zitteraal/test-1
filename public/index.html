@@ -1,624 +1,399 @@
 <!DOCTYPE html>
 <html lang="de">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hacker-Terminal V4 - Fixed</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hacker Terminal — STASI</title>
 
-    <!-- Import der THREE.js-Bibliothek für 3D-Grafiken -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- three.js CDN (r128) + fallback loader built-in below -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
-    <style>
-        /* ========================================================================= */
-        /* ALLGEMEINES STYLING UND FONT */
-        /* ========================================================================= */
-        html,
-        body {
-            height: 100%;
-            margin: 0;
-            background: #000;
-            color: #00FF00;
-            font-family: 'VT323', monospace;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            overflow: hidden;
-            position: relative;
-        }
-
-        /* ========================================================================= */
-        /* LADEBILDSCHIRM-STYLING (Hacker-Animation) */
-        /* ========================================================================= */
-        #loader {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.95);
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            transition: opacity 1.5s ease-in-out;
-            text-align: center;
-        }
-
-        #sphere-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-        }
-
-        #loading-text {
-            position: absolute;
-            font-size: clamp(1rem, 4vw, 2.5rem);
-            color: #00FF00;
-            text-shadow: 0 0 10px #00FF00;
-            z-index: 12;
-            white-space: nowrap;
-            transition: opacity 0.5s ease-in-out;
-        }
-
-        #loading-log {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            width: 450px;
-            max-height: 250px;
-            background-color: rgba(0, 0, 0, 0.7);
-            border-radius: 8px;
-            border: 2px solid #00FF00;
-            box-shadow: 0 0 15px rgba(0, 255, 0, 0.7);
-            z-index: 13;
-            padding: 15px;
-            overflow-y: auto;
-            opacity: 0;
-            transition: opacity 1s ease;
-        }
-
-        .log-line {
-            color: #00FF00;
-            margin: 0;
-            white-space: pre-wrap;
-            opacity: 0;
-            animation: fadeIn 0.5s forwards;
-            animation-delay: var(--delay);
-        }
-
-        .status-ok { color: #00FF00; }
-        .status-info { color: #FFFF00; }
-        .status-warn { color: #FFA500; }
-        .status-fail { color: #FF0000; }
-        .status-success { color: #00FF00; }
-
-        #progress-bar-container {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 300px;
-            height: 25px;
-            background-color: rgba(0, 0, 0, 0.7);
-            border: 2px solid #00FF00;
-            border-radius: 4px;
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
-            overflow: hidden;
-            z-index: 13;
-            opacity: 0;
-            transition: opacity 1s ease;
-        }
-
-        #progress-bar-fill {
-            height: 100%;
-            width: 0%;
-            background-color: #00FF00;
-            transition: width 0.5s ease-out;
-            box-shadow: 0 0 8px #00FF00;
-        }
-
-        #access-granted {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: clamp(3.5rem, 12vw, 6rem);
-            text-shadow: 0 0 25px #00FF00, 0 0 50px rgba(0, 255, 0, 0.7);
-            animation: glitch-anim 0.6s infinite linear alternate, fadeIn 1.2s forwards;
-            display: none;
-            opacity: 0;
-            z-index: 11;
-            transition: opacity 1.2s ease-in-out;
-        }
-
-        .glitch-text { animation: glitch-anim 2.5s infinite linear alternate; }
-        @keyframes glitch-anim { 0% { text-shadow: none; } 10% { text-shadow: 0.04em 0.03em 0 #00FF00, -0.02em -0.02em 0 #00FFFF, 0.03em 0.04em 0 #FFFF00; } 20% { text-shadow: none; } 30% { text-shadow: 0.02em 0.03em 0 #FF0000, -0.04em -0.02em 0 #00FFFF, 0.02em 0.03em 0 #00FF00; } 40% { text-shadow: none; } 50% { text-shadow: -0.03em -0.04em 0 #00FFFF, 0.03em 0.02em 0 #FF0000, -0.02em -0.03em 0 #00FF00; } 60% { text-shadow: none; } 70% { text-shadow: 0.04em 0.02em 0 #00FF00, -0.03em -0.03em 0 #FFFF00, 0.04em 0.02em 0 #FF0000; } 80% { text-shadow: none; } 90% { text-shadow: -0.02em -0.04em 0 #FFFF00, 0.03em 0.03em 0 #00FFFF, -0.04em -0.02em 0 #00FF00; } 100% { text-shadow: none; } }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-
-        /* ========================================================================= */
-        /* LOGIN SCREEN STYLING */
-        /* ========================================================================= */
-        #login-screen {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: #000;
-            z-index: 90;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .login-box {
-            background: rgba(10,10,10,0.8);
-            border: 2px solid #00ff00;
-            border-radius: 8px;
-            padding: 30px 40px;
-            box-shadow: 0 0 30px rgba(0,255,0,0.4);
-            text-align: center;
-            width: 350px;
-        }
-        .login-box h1 {
-            font-size: 2.5rem;
-            margin-top: 0;
-            margin-bottom: 25px;
-            text-shadow: 0 0 10px #00ff00;
-        }
-        .input-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-        .input-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 1.2rem;
-        }
-        .input-group input {
-            width: 100%;
-            padding: 10px;
-            background: #000;
-            border: 1px solid #00ff00;
-            color: #00ff00;
-            font-family: 'VT323', monospace;
-            font-size: 1.1rem;
-            outline: none;
-            box-sizing: border-box;
-        }
-        .login-buttons {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-        }
-        #login-message {
-            margin-top: 15px;
-            height: 20px;
-            font-size: 1.1rem;
-            color: #ff4444;
-        }
-
-        /* ========================================================================= */
-        /* DESKTOP-STYLING */
-        /* ========================================================================= */
-        #desktop {
-            position: fixed; top: 0; left: 0;
-            width: 100%; height: 100%;
-            background-color: #000;
-            z-index: 50;
-            display: none;
-            flex-direction: row;
-            flex-wrap: wrap;
-            align-items: flex-start;
-            padding: 20px;
-            gap: 20px;
-            transition: opacity 0.3s ease;
-        }
-
-        .desktop-icon {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 120px;
-            padding: 10px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .desktop-icon:hover { background-color: rgba(0, 255, 0, 0.1); border-radius: 8px; }
-        .icon-svg { width: 60px; height: 60px; fill: #00FF00; filter: drop-shadow(0 0 8px rgba(0, 255, 0, 0.6)); }
-        .icon-label { margin-top: 8px; color: #00FF00; text-shadow: 0 0 5px #00FF00; font-size: 1.2rem; text-align: center; font-weight: bold; }
-
-        /* ========================================================================= */
-        /* MAIN APP STYLING (TERMINAL & SCHACH) */
-        /* ========================================================================= */
-        #newTerminalBtn {
-            position: fixed; top: 20px; right: 20px;
-            display: none; padding: 8px 12px;
-            background-color: #0a0a0a; color: #00FF00;
-            border: 2px solid #00FF00;
-            font-family: 'VT323', monospace; font-size: 1.5rem;
-            text-shadow: 0 0 10px #00FF00;
-            box-shadow: 0 0 15px rgba(0, 255, 0, 0.7);
-            border-radius: 8px; cursor: pointer;
-            transition: all 0.3s ease;
-            z-index: 50;
-        }
-        #newTerminalBtn:hover { background-color: #001a00; box-shadow: 0 0 25px rgba(0, 255, 0, 1); transform: scale(1.05); }
-
-        .terminal-window {
-            width: 70%; max-width: none;
-            height: 80%; max-height: none;
-            background-color: #000;
-            border: 2px solid #00FF00;
-            box-shadow: 0 0 25px rgba(0, 255, 0, 0.7);
-            display: flex; flex-direction: column;
-            overflow: hidden; resize: none; border-radius: 8px;
-            position: absolute; z-index: 2;
-        }
-        .terminal-header { background-color: #0a0a0a; color: #00FF00; padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #00FF00; cursor: grab; }
-        .terminal-header h2 { margin: 0; font-size: 1.2rem; text-shadow: 0 0 6px #00FF00; }
-        .close-btn { background-color: transparent; color: #00FF00; border: none; font-size: 1.5rem; cursor: pointer; transition: color 0.3s ease, text-shadow 0.3s ease; text-shadow: 0 0 8px #00FF00; }
-        .close-btn:hover { color: #FF0000; text-shadow: 0 0 12px #FF0000; }
-        .terminal-output { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; background-color: rgba(13, 13, 13, 0.6); -ms-overflow-style: none; scrollbar-width: none; font-size: 1.1rem; line-height: 1.2; white-space: pre-wrap; }
-        .terminal-output::-webkit-scrollbar { display: none; }
-        .log-entry { max-width: 100%; word-wrap: break-word; font-family: 'VT323', monospace; color: #00FF00; }
-        .user-input-line { color: #FFFFFF; font-weight: bold; }
-        .terminal-input-container { display: flex; align-items: center; padding: 15px 20px; background-color: rgba(13, 13, 13, 0.95); border-top: 2px solid #00FF00; font-size: 1.1rem; }
-        .prompt-symbol { color: #00FF00; font-size: 1.2rem; margin-right: 8px; }
-        .terminal-input-container input[type="text"] { flex-grow: 1; border: none; background-color: transparent; color: #00FF00; font-size: 1.1rem; outline: none; font-family: 'VT323', monospace; }
-        .terminal-input-container button { background-color: #008800; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-size: 1rem; font-weight: 400; transition: transform 0.3s ease, box-shadow 0.4s ease; box-shadow: 0 0 8px rgba(0, 255, 0, 0.6); font-family: 'VT323', monospace; }
-        .terminal-input-container button:hover { transform: translateY(-2px); box-shadow: 0 0 12px rgba(0, 255, 0, 0.8); }
-
-        /* ========================================================================= */
-        /* MODAL STYLING (für Spielende & Speichern) */
-        /* ========================================================================= */
-        .hacker-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9998; display: flex; align-items: center; justify-content: center; }
-        .hacker-modal { background: linear-gradient(180deg, rgba(0,0,0,0.98), rgba(5,5,5,0.95)); border: 3px solid #00ff00; padding: 25px; z-index: 9999; text-align: center; color: #00ff00; font-family: 'VT323', monospace; box-shadow: 0 0 40px rgba(0,255,0,0.3); border-radius: 12px; }
-        .hacker-modal h2 { margin-top: 0; font-size: 1.8rem; text-shadow: 0 0 10px #00ff00; }
-        .hacker-modal p { font-size: 1.1rem; margin-bottom: 20px; }
-        .hacker-modal-buttons { display: flex; gap: 12px; justify-content: center; }
-        .hacker-btn { background: transparent; color: #00FF00; border: 2px solid #00FF00; padding: 10px 20px; font-size: 1.2rem; font-family: 'VT323', monospace; cursor: pointer; text-shadow: 0 0 6px #00FF00; box-shadow: 0 0 12px rgba(0,255,0,0.7); border-radius: 6px; transition: all 0.2s ease-in-out; }
-        .hacker-btn:hover { background: #002a00; box-shadow: 0 0 20px #00FF00; transform: scale(1.05) translateY(-2px); }
-        .hacker-btn.primary { background: #003300; }
-        .hacker-btn.danger { border-color: #ff4444; color: #ff4444; text-shadow: 0 0 6px #ff4444; box-shadow: 0 0 12px rgba(255,68,68,0.7); }
-        .hacker-btn.danger:hover { background: #330000; }
-
-        /* ========================================================================= */
-        /* SCHACH-STYLING */
-        /* ========================================================================= */
-        .chess-window .terminal-header { cursor: grab; }
-        .chess-board-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; width: 100%; box-sizing: border-box; }
-        .chess-board { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); aspect-ratio: 1 / 1; width: 100%; height: 100%; max-width: none; max-height: none; border: 2px solid #00ff00; box-sizing: border-box; }
-        .chess-square { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; user-select: none; position: relative; overflow: visible; font-size: 2.5vmin; }
-        .chess-piece-img { width: 86%; height: 86%; object-fit: contain; pointer-events: none; display: block; transition: transform 0.2s ease; }
-        .chess-square:hover .chess-piece-img { transform: translateY(-6%) scale(1.06); }
-        .last-move-from { background-color: rgba(0, 255, 0, 0.3) !important; }
-        .last-move-to { background-color: rgba(255, 255, 0, 0.3) !important; }
-        .chess-topbar { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; width: 100%; max-width: 75vh; padding: 0 5px; box-sizing: border-box; }
-        .chess-controls-right { display: flex; align-items: center; gap: 8px; }
-        .elo-control { display: flex; align-items: center; gap: 10px; }
-        #elo-slider { -webkit-appearance: none; width: 120px; height: 5px; background: #003300; outline: none; border: 1px solid #00FF00; border-radius: 5px; box-shadow: 0 0 5px rgba(0, 255, 0, 0.5); }
-        #elo-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 15px; height: 15px; background: #00FF00; cursor: pointer; border-radius: 50%; box-shadow: 0 0 10px #00FF00; }
-        #elo-value { font-weight: bold; min-width: 40px; }
-        #thinking-indicator { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: #00ff00; padding: 15px 25px; border-radius: 8px; border: 2px solid #00ff00; box-shadow: 0 0 20px #00ff00; z-index: 1001; font-size: 1.5rem; }
-        .promotion-modal { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1000; display: none; }
-        .promotion-modal.visible { display: flex; }
-        .promotion-box { background: #0b0b0b; border: 2px solid #00FF00; box-shadow: 0 8px 30px rgba(0, 255, 0, 0.06); padding: 18px; border-radius: 10px; text-align: center; min-width: 260px; }
-        .promotion-title { font-family: 'VT323', monospace; color: #00FF00; margin-bottom: 10px; font-size: 1.15rem; }
-        .promotion-options { display: flex; justify-content: space-between; gap: 8px; }
-        .promote-btn { background: transparent; color: #00FF00; border: 1px solid #00FF00; padding: 8px 10px; border-radius: 6px; font-family: 'VT323', monospace; cursor: pointer; transition: transform 120ms ease, box-shadow 120ms ease; }
-        .promote-btn:hover { transform: translateY(-6%); box-shadow: 0 0 14px rgba(0, 255, 0, 0.08); }
-        .chess-control { margin-top: 15px; display: flex; justify-content: center; }
-        .light { background-color: #555; }
-        .dark { background-color: #222; }
-        .selected { background-color: rgba(0, 204, 0, 0.7); }
-        .highlight-move::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 30%; height: 30%; background: rgba(0, 255, 0, 0.5); border-radius: 50%; box-shadow: 0 0 15px #00FF00; animation: pulse 1s infinite alternate; }
-        .highlight-capture::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; height: 85%; background: transparent; border-radius: 50%; box-sizing: border-box; border: 4px dashed rgba(255, 0, 0, 0.7); animation: pulse-red 1s infinite alternate; }
-        @keyframes pulse { from { opacity: 0.7; transform: translate(-50%,-50%) scale(0.9); } to { opacity: 1; transform: translate(-50%,-50%) scale(1.1); } }
-        @keyframes pulse-red { from { opacity: 0.7; } to { opacity: 1; } }
-
-        /* ========================================================================= */
-        /* REPLAY VIEWER STYLING */
-        /* ========================================================================= */
-        .replay-viewer-container { padding: 15px; box-sizing: border-box; width: 100%; height: 100%; display: flex; flex-direction: column; gap: 12px; font-size: 1.1rem; }
-        .replay-controls-top { display: flex; gap: 8px; align-items: center; }
-        #replay-search-input { flex: 1; padding: 8px 12px; background: #0a0a0a; color: #00ff00; border: 1px solid #00ff00; font-family: 'VT323', monospace; font-size: 1.1rem; outline: none; }
-        .replay-list-container { flex: 1; overflow-y: auto; border: 1px solid #003300; padding: 10px; background: rgba(0,0,0,0.3); }
-        .replay-list-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px dashed rgba(0, 255, 0, 0.2); padding: 8px 4px; }
-        .replay-list-item-meta { flex-grow: 1; cursor: pointer; }
-        .replay-list-item-meta:hover { background: rgba(0, 255, 0, 0.1); }
-        .replay-player-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; display: flex; align-items: center; justify-content: center; flex-direction: column; padding: 20px; box-sizing: border-box; }
-        #replay-board-viewer { width: 100%; max-width: 80vh; aspect-ratio: 1/1; border: 2px solid #00ff00; }
-        .replay-player-controls { margin-top: 15px; display: flex; gap: 10px; align-items: center; }
-        #replay-pos-viewer { font-weight: bold; min-width: 60px; text-align: center; font-size: 1.3rem; }
-
-    </style>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <style>
+    /* Minimal, take-what-you-need styling matching previous look */
+    :root{--green:#00ff66;--bg:#000000}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--green);font-family:'VT323',monospace;overflow:hidden}
+    #loader{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:60}
+    #loading-text{font-size:36px;color:var(--green);text-shadow:0 0 10px rgba(0,255,102,0.25)}
+    #loading-log{position:fixed;left:16px;bottom:16px;width:420px;height:180px;background:rgba(0,0,0,0.6);border:1px solid var(--green);padding:12px;overflow:auto;color:#bfffcf;font-size:12px;display:block}
+    #progress-bar-container{width:60%;height:6px;background:rgba(255,255,255,0.03);margin-top:18px;border-radius:4px;overflow:hidden}
+    #progress-bar-fill{height:100%;width:0;background:linear-gradient(90deg,#00ff66,#00a08a);transition:width .4s}
+    #access-granted{font-size:20px;color:var(--green);margin-top:12px;display:none}
+    #sphere-container{position:fixed;inset:0;z-index:10;pointer-events:none}
+    #login-screen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:80}
+    .login-box{background:rgba(0,0,0,0.85);border:2px solid var(--green);padding:24px;border-radius:8px;min-width:340px;color:var(--green)}
+    label{display:block;font-size:13px;margin-bottom:6px}
+    input{width:100%;padding:8px;border-radius:4px;border:1px solid rgba(0,255,102,0.15);background:#061106;color:var(--green);font-family:inherit}
+    .hacker-btn{background:transparent;border:1px solid var(--green);color:var(--green);padding:8px 12px;margin-right:8px;border-radius:6px;cursor:pointer}
+    .hacker-btn.primary{background:var(--green);color:#002b00}
+    #desktop{position:fixed;inset:0;display:none;z-index:50}
+    .desktop-icon{position:absolute;left:20px;top:20px;width:88px;height:88px;border:1px dashed rgba(0,255,102,0.12);display:flex;align-items:center;justify-content:center;color:var(--green);border-radius:8px;cursor:pointer}
+    .desktop-icon + .desktop-icon{top:120px}
+    .icon-label{display:block;text-align:center;font-size:12px;margin-top:8px}
+    /* Debug overlay style (small) */
+    #debug-overlay{position:fixed;right:12px;bottom:12px;width:420px;max-height:48vh;overflow:auto;background:rgba(0,0,0,0.9);color:#fff;border:1px solid #ff4444;padding:8px;z-index:99999;font-family:monospace;font-size:12px}
+  </style>
 </head>
-
 <body>
+  <!-- Loader / Boot -->
+  <div id="loader" role="dialog" aria-hidden="false">
+    <div id="sphere-container" aria-hidden="true"></div>
+    <div id="loading-text">Starte System...</div>
+    <div id="progress-bar-container" aria-hidden="true"><div id="progress-bar-fill"></div></div>
+    <div id="access-granted">SYSTEM ONLINE</div>
+    <div id="loading-log" aria-hidden="false"></div>
+  </div>
 
-    <div id="loader">
-        <div id="sphere-container"></div>
-        <div id="loading-text">Starte System...</div>
-        <div id="loading-log"></div>
-        <div id="progress-bar-container"><div id="progress-bar-fill"></div></div>
-        <div id="access-granted"><span class="glitch-text">SYSTEM ONLINE</span></div>
+  <!-- Login screen -->
+  <div id="login-screen">
+    <div class="login-box">
+      <h2>AUTHENTIFIZIERUNG</h2>
+      <div style="margin-bottom:10px">
+        <label for="username">Benutzername</label>
+        <input id="username" autocomplete="username" />
+      </div>
+      <div style="margin-bottom:12px">
+        <label for="password">Passwort</label>
+        <input id="password" type="password" autocomplete="current-password" />
+      </div>
+      <div style="display:flex;align-items:center">
+        <button id="login-btn" class="hacker-btn">LOGIN</button>
+        <button id="register-btn" class="hacker-btn primary">REGISTRIEREN</button>
+      </div>
+      <p id="login-message" style="margin-top:10px;color:#ff6666"></p>
     </div>
+  </div>
 
-    <div id="login-screen">
-        <div class="login-box">
-            <h1>AUTHENTIFIZIERUNG</h1>
-            <div class="input-group">
-                <label for="username">BENUTZERNAME:</label>
-                <input type="text" id="username" name="username" required>
-            </div>
-            <div class="input-group">
-                <label for="password">PASSWORT:</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <div class="login-buttons">
-                <button class="hacker-btn" id="login-btn">LOGIN</button>
-                <button class="hacker-btn primary" id="register-btn">REGISTRIEREN</button>
-            </div>
-            <p id="login-message"></p>
-        </div>
-    </div>
+  <!-- Desktop (icons placeholders) -->
+  <div id="desktop">
+    <div class="desktop-icon" id="console-icon" style="left:20px;top:20px"><div class="icon-label">Konsole</div></div>
+    <div class="desktop-icon" id="chess-icon" style="left:20px;top:120px"><div class="icon-label">Schach</div></div>
+    <div class="desktop-icon" id="replay-icon" style="left:20px;top:220px"><div class="icon-label">Replays</div></div>
+    <div class="desktop-icon" id="logout-icon" style="left:20px;top:320px"><div class="icon-label">Logout</div></div>
+  </div>
 
-    <div id="desktop">
-        <div class="desktop-icon" id="console-icon">
-            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M20 3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM4 19V5h16l-.001 14H4zm1-3h14v1H5v-1zm0-3h14v1H5v-1zm0-3h14v1H5v-1z" /></svg>
-            <span class="icon-label">Konsole</span>
-        </div>
-        <div class="desktop-icon" id="chess-icon">
-            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L8 12v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
-            <span class="icon-label">Schach</span>
-        </div>
-        <div class="desktop-icon" id="replay-icon">
-            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 5V1L8 5l4 4V6c3.87 0 7 3.13 7 7 0 1.3-.34 2.52-.94 3.6L20.9 18C21.6 16.76 22 15.42 22 14c0-5.52-4.48-10-10-10zm0 15c-3.87 0-7-3.13-7-7 0-1.3.34-2.52.94-3.6L3.1 8C2.4 9.24 2 10.58 2 12c0 5.52 4.48 10 10 10v4l4-4-4-4v3z"/></svg>
-            <span class="icon-label">Replays</span>
-        </div>
-         <div class="desktop-icon" id="logout-icon">
-            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
-            <span class="icon-label">Logout</span>
-        </div>
-    </div>
+  <!-- Debug overlay (hidden if unused) -->
+  <div id="debug-overlay" style="display:none"></div>
 
-    <button id="newTerminalBtn">[ + ]</button>
+  <!-- App script (all in one file for reliability) -->
+  <script>
+  /*************************************************************************
+   * Robust, self-contained frontend:
+   * - loads three.js from CDN if missing (we already loaded in head)
+   * - sets up 3D init and animate as safe functions
+   * - boot sequence -> show login (auto-check /api/me)
+   * - login/register via /api endpoints (credentials included)
+   * - debug overlay to show errors
+   *************************************************************************/
 
-    <template id="game-over-modal-template">
-        <div class="hacker-modal-overlay">
-            <div class="hacker-modal">
-                <h2 id="modal-title">Partie beendet!</h2>
-                <p id="modal-text">Möchtest du die Partie speichern?</p>
-                <div class="hacker-modal-buttons">
-                    <button class="hacker-btn" id="modal-action-save">Speichern</button>
-                    <button class="hacker-btn primary" id="modal-action-new">Neues Spiel</button>
-                    <button class="hacker-btn" id="modal-action-close">Schließen</button>
-                </div>
-            </div>
-        </div>
-    </template>
+  (function () {
+    // --------- Config ----------
+    const API_BASE = ''; // relative; when hosted on same origin (recommended)
+    const loadingLogEl = document.getElementById('loading-log');
+    const progressFill = document.getElementById('progress-bar-fill');
 
-    <script>
-        // === Globale DOM-Elementreferenzen ===
-        const loader = document.getElementById('loader'), sphereContainer = document.getElementById('sphere-container'), loadingText = document.getElementById('loading-text'), loadingLog = document.getElementById('loading-log'), progressBarContainer = document.getElementById('progress-bar-container'), progressBar = document.getElementById('progress-bar-fill'), accessGranted = document.getElementById('access-granted'), loginScreen = document.getElementById('login-screen'), desktop = document.getElementById('desktop'), newTerminalBtn = document.getElementById('newTerminalBtn'), consoleIcon = document.getElementById('console-icon'), chessIcon = document.getElementById('chess-icon'), replayIcon = document.getElementById('replay-icon'), logoutIcon = document.getElementById('logout-icon');
-
-        // === Globale Statusvariablen ===
-        const apiKey = "AIzaSyB-0z8e59quUM-EaRl0tGiK-5eVaSUq3dQ";
-        let highestZIndex = 2, currentUser = null;
-
-        // =========================================================================
-        // THREE.JS SETUP FÜR 3D-LADEANIMATION (UNVERÄNDERT)
-        // =========================================================================
-        let scene,camera,renderer,particles,particleMaterial,stars,wireframeGlobe,particleInfo=[],animationPhase='chaos',clock,phaseStartTime,orbitStartTime;const chaosBounds=10,sphereRadius=2,particleCount=3500;function init3D(){scene=new THREE.Scene,camera=new THREE.PerspectiveCamera(70,window.innerWidth/window.innerHeight,.1,2e3),camera.position.z=9.5,renderer=new THREE.WebGLRenderer({antialias:!0,alpha:!0}),renderer.setSize(window.innerWidth,window.innerHeight),renderer.setPixelRatio(Math.min(window.devicePixelRatio,2)),sphereContainer.appendChild(renderer.domElement);const e=new THREE.IcosahedronGeometry(2,4),t=new THREE.MeshBasicMaterial({color:65280,wireframe:!0,transparent:!0,opacity:0});wireframeGlobe=new THREE.Mesh(e,t),scene.add(wireframeGlobe);const n=new Float32Array(9e3),r=new THREE.SphereGeometry(2,32,32),o=r.attributes.position.array;for(let e=0;e<3e3;e++){const t=(.5-Math.random())*20,i=(.5-Math.random())*20,s=(.5-Math.random())*20;n[3*e]=t,n[3*e+1]=i,n[3*e+2]=s;const a=Math.floor(Math.random()*(o.length/3)),c=new THREE.Vector3(o[3*a],o[3*a+1],o[3*a+2]),l=.28+.32*Math.random(),d=c.clone().multiplyScalar(l),p=new THREE.Vector3(.04*(Math.random()-.5),.04*(Math.random()-.5),.04*(Math.random()-.5));particleInfo.push({target:c,innerTarget:d,velocity:p,state:"idle",stagingPoint:null})}const i=new THREE.BufferGeometry;i.setAttribute("position",new THREE.BufferAttribute(n,3)),particleMaterial=new THREE.PointsMaterial({color:65280,size:.03,transparent:!0,opacity:.9}),particles=new THREE.Points(i,particleMaterial),scene.add(particles);const s=new THREE.BufferGeometry,a=[];for(let e=0;e<3e3;e++)a.push(2e3*(Math.random()-.5),2e3*(Math.random()-.5),2e3*(Math.random()-.5));s.setAttribute("position",new THREE.Float32BufferAttribute(a,3));const c=new THREE.PointsMaterial({color:65280,size:1.5,transparent:!0,opacity:.45});stars=new THREE.Points(s,c),scene.add(stars),clock=new THREE.Clock,phaseStartTime=clock.getElapsedTime(),window.addEventListener("resize",onWindowResize)}function animate3D(){requestAnimationFrame(animate3D),clock.getDelta();const e=clock.getElapsedTime(),t=particles.geometry.attributes.position.array;switch(animationPhase){case"chaos":for(let n=0;n<3e3;n++)t[3*n]+=particleInfo[n].velocity.x,t[3*n+1]+=particleInfo[n].velocity.y,t[3*n+2]+=particleInfo[n].velocity.z,Math.abs(t[3*n])>10&&(particleInfo[n].velocity.x*=-1),Math.abs(t[3*n+1])>10&&(particleInfo[n].velocity.y*=-1),Math.abs(t[3*n+2])>10&&(particleInfo[n].velocity.z*=-1);e-phaseStartTime>2.8&&(animationPhase="converging",phaseStartTime=e);break;case"converging":let n=0;for(let r=0;r<3e3;r++){const o=t[3*r],i=t[3*r+1],s=t[3*r+2],a=new THREE.Vector3(o,i,s),c=particleInfo[r].target;a.lerp(c,.045+.01*Math.random()),t[3*r]=a.x,t[3*r+1]=a.y,t[3*r+2]=a.z,a.distanceTo(c)<.09&&n++}const r=n/3e3;wireframeGlobe.material.opacity=Math.min(1,1.6*r),(r>.96||clock.getElapsedTime()-phaseStartTime>7.5)&&(prepareXInflow(),animationPhase="xInflow",phaseStartTime=clock.getElapsedTime());break;case"xInflow":let o=0;for(let e=0;e<3e3;e++){const n=3*e,r=new THREE.Vector3(t[n],t[n+1],t[n+2]),i=particleInfo[e],s=r.length();!i.state||"idle"===i.state?s>2.06?(i.state="toStaging",i.stagingPoint=computeStagingPoint(r)):i.state="toInner":"toStaging"===i.state?(s=i.stagingPoint,r.lerp(s,.1+.03*Math.random()),t[n]=r.x,t[n+1]=r.y,t[n+2]=r.z,r.distanceTo(s)<.12&&(i.state="toInner")):"toInner"===i.state?(s=i.innerTarget,a=s.clone().sub(r),c=new THREE.Vector3(-a.y,a.x,.08*a.z).multiplyScalar(.004+e%7*.0002),r.add(c),r.lerp(s,.038+.012*Math.random()),t[n]=r.x,t[n+1]=r.y,t[n+2]=r.z,r.distanceTo(s)<.055&&(i.state="settled")):"settled"===i.state&&o++}var i,s,a,c;wireframeGlobe.material.opacity=Math.max(.18,1-.9*(o/3e3)),(o/3e3>.98||clock.getElapsedTime()-phaseStartTime>12)&&(animationPhase="orbit",orbitStartTime=clock.getElapsedTime(),phaseStartTime=clock.getElapsedTime());break;case"orbit":const l=(clock.getElapsedTime()-orbitStartTime);let d=0;for(let e=0;e<3e3;e++){const n=3*e,r=new THREE.Vector3(t[n],t[n+1],t[n+2]),o=e/3e3*Math.PI*2,i=o+.6*l+e%137*.003,s=2*(1.6+.6*Math.sin(.9*l+.017*e)),a=Math.cos(i)*s,c=Math.sin(i)*s,p=Math.sin(2*i+.01*e)*.55,h=new THREE.Vector3(a,p,c);r.lerp(h,.06+e%11*.0014),t[n]=r.x,t[n+1]=r.y,t[n+2]=r.z,r.length()>3.1&&d++}wireframeGlobe.material.opacity=.95,d/3e3>.98;break}wireframeGlobe.rotation.y+=.0025,stars&&(stars.rotation.y+=1e-4),particles.geometry.attributes.position.needsUpdate=!0,renderer.render(scene,camera)}function prepareXInflow(){for(let e=0;e<3e3;e++){const t=3*e,n=new THREE.Vector3(particles.geometry.attributes.position.array[t],particles.geometry.attributes.position.array[t+1],particles.geometry.attributes.position.array[t+2]),r=n.length();r>2.06?(particleInfo[e].state="toStaging",particleInfo[e].stagingPoint=computeStagingPoint(n)):(particleInfo[e].state="toInner",particleInfo[e].stagingPoint=null)}}function computeStagingPoint(e){const t=[new THREE.Vector3(1,1,0).normalize(),new THREE.Vector3(-1,1,0).normalize(),new THREE.Vector3(1,-1,0).normalize(),new THREE.Vector3(-1,-1,0).normalize()],n=new THREE.Vector3(e.x,e.y,0);let r=0,o=-1/0;const i=n.length()>.0001?n.clone().normalize():new THREE.Vector3(1,1,0).normalize();for(let e=0;e<t.length;e++){const n=t[e],s=i.dot(n);s>o&&(o=s,r=e)}const s=2*(1.25+.45*Math.random()),a=t[r].clone().multiplyScalar(s);return a.z=.18*e.z+.5*(Math.random()-.5),a}function onWindowResize(){const e=window.innerWidth,t=window.innerHeight;camera.aspect=e/t,camera.updateProjectionMatrix(),renderer.setSize(e,t)}
-
-        // =========================================================================
-        // BENUTZER- UND DATEN-LOGIK
-        // =========================================================================
-        let db = { users: {}, userGames: {} };
-
-        function loadDB() {
-            try {
-                const storedDB = JSON.parse(localStorage.getItem('hackerChessDB'));
-                if (storedDB) db = storedDB;
-            } catch (e) { console.error("Could not load database from localStorage", e); }
-        }
-
-        function saveDB() {
-            try {
-                localStorage.setItem('hackerChessDB', JSON.stringify(db));
-            } catch (e) { console.error("Could not save database to localStorage", e); }
-        }
-
-        // =========================================================================
-        // CHAT-LOGIK
-        // =========================================================================
-        function displayMessage(messagesDiv, message, sender) { const messageElement = document.createElement('div'); messageElement.classList.add('log-entry'); if (sender === 'user') { const userLine = document.createElement('span'); userLine.classList.add('user-input-line'); userLine.textContent = `> ${message}`; messageElement.appendChild(userLine); } else { messageElement.innerHTML = `> ${message.replace(/\n/g, '<br>')}`; } messagesDiv.appendChild(messageElement); messagesDiv.scrollTop = messagesDiv.scrollHeight; }
-        async function getGeminiResponse(userPrompt) { if (!apiKey) { console.error("API key missing."); return "Sorry, there was a configuration error."; } const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`; const payload = { contents: [{role: 'user', parts: [{text: userPrompt}]}], tools: [{"google_search": {}}], systemInstruction: {parts: [{text: "You are a helpful AI assistant from Google. Reply helpfully and friendly in German. Format answers with Markdown."}]} }; try { const response = await fetch(apiUrl, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)}); if (!response.ok) throw new Error(`API Error: ${response.status}`); const result = await response.json(); return result?.candidates?.[0]?.content?.parts?.[0]?.text || "No response received."; } catch (error) { console.error("API call error:", error); return "An error occurred. Please try again."; } }
-        async function sendMessage(terminalId) { const terminal = document.getElementById(terminalId); const userInput = terminal.querySelector('.terminal-input'); const messagesDiv = terminal.querySelector('.terminal-output'); const message = userInput.value.trim(); if (!message) return; displayMessage(messagesDiv, message, 'user'); userInput.disabled = true; userInput.value = ''; try { const botResponse = await getGeminiResponse(message); displayMessage(messagesDiv, botResponse, 'bot'); } catch (error) { console.error("Error sending message:", error); displayMessage(messagesDiv, "An error occurred.", 'bot'); } finally { userInput.disabled = false; userInput.focus(); } }
-
-        // =========================================================================
-        // MEHRFACHFENSTER-LOGIK
-        // =========================================================================
-        let windowCounter = 0;
-        function createWindow(title, contentHTML, initialSize = {width: '700px', height: '500px'}) { windowCounter++; const windowId = `window-${windowCounter}`; const newWindow = document.createElement('div'); newWindow.id = windowId; newWindow.className = 'terminal-window'; newWindow.style.zIndex = ++highestZIndex; newWindow.style.width = initialSize.width; newWindow.style.height = initialSize.height; const offsetX = 50 + (windowCounter * 20) % (window.innerWidth - 800); const offsetY = 50 + (windowCounter * 20) % (window.innerHeight - 600); newWindow.style.left = `${offsetX}px`; newWindow.style.top = `${offsetY}px`; newWindow.innerHTML = `<div class="terminal-header"><h2>${title}</h2><button class="close-btn">[ x ]</button></div>${contentHTML}`; document.body.appendChild(newWindow); desktop.style.display = 'none'; newTerminalBtn.style.display = 'block'; const header = newWindow.querySelector('.terminal-header'); const closeBtn = newWindow.querySelector('.close-btn'); newWindow.addEventListener('mousedown', () => { newWindow.style.zIndex = ++highestZIndex; }); let isDragging = false, dragOffsetX, dragOffsetY; header.addEventListener('mousedown', (e) => { isDragging = true; dragOffsetX = e.clientX - newWindow.offsetLeft; dragOffsetY = e.clientY - newWindow.offsetTop; header.style.cursor = 'grabbing'; document.body.style.userSelect = 'none'; }); document.addEventListener('mousemove', (e) => { if (isDragging) { const newX = e.clientX - dragOffsetX; const newY = e.clientY - dragOffsetY; newWindow.style.left = `${newX}px`; newWindow.style.top = `${newY}px`; } }); document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; header.style.cursor = 'grab'; document.body.style.userSelect = 'auto'; } }); closeBtn.addEventListener('click', () => { newWindow.remove(); if (document.querySelectorAll('.terminal-window').length === 0) { desktop.style.display = 'flex'; newTerminalBtn.style.display = 'none'; } }); return newWindow; }
-        function createTerminalWindow() { const terminalContent = `<div class="terminal-output"><div class="log-entry">> Initialisiere Schnittstelle... [OK]</div><div class="log-entry">> Lade Module... [OK]</div></div><div class="terminal-input-container"><span class="prompt-symbol">></span><input type="text" class="terminal-input" placeholder="Geben Sie Ihren Befehl ein..." autofocus><button class="sendBtn">Senden</button></div>`; const terminalWindow = createWindow('TERMINAL', terminalContent); const userInput = terminalWindow.querySelector('.terminal-input'); const sendBtn = terminalWindow.querySelector('.sendBtn'); sendBtn.addEventListener('click', () => sendMessage(terminalWindow.id)); userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(terminalWindow.id); }); userInput.focus(); }
-
-        // =========================================================================
-        // ROBUSTER SKRIPT-LADER UND SCHACH-LOGIK
-        // =========================================================================
-        let chessScriptsLoaded = false;
-        function loadScript(src) { return new Promise((resolve, reject) => { if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; } const script = document.createElement('script'); script.src = src; script.onload = () => resolve(); script.onerror = () => reject(new Error(`Konnte Skript nicht laden: ${src}`)); document.head.appendChild(script); }); }
-        const pieceImages = { 'w': {'p':'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg','r':'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg','n':'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg','b':'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg','q':'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg','k':'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg'}, 'b': {'p':'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg','r':'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg','n':'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg','b':'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg','q':'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg','k':'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg'} };
-        async function createChessWindow() { const initialContent = `<div class="chess-board-container" style="text-align: center; font-size: 1.5rem; padding: 40px;"><p>Lade Schach-Module...</p></div>`; const chessWindow = createWindow('Schach vs. Stockfish', initialContent, { width: 'auto', height: 'auto' }); chessWindow.classList.add('chess-window'); chessWindow.style.resize = 'none'; const loaderDiv = chessWindow.querySelector('.chess-board-container'); try { if (!chessScriptsLoaded) { await loadScript("https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"); chessScriptsLoaded = true; } } catch (error) { console.error(error); loaderDiv.innerHTML = '<p style="color: #FF0000;">Fehler beim Laden der Engine.</p>'; return; } const gameContentHTML = `<div id="thinking-indicator">Stockfish denkt nach...</div><div class="chess-board-container"><div class="chess-topbar"><div id="chess-status" class="chess-status">Weiß am Zug</div><div class="chess-controls-right"><div class="elo-control"><label for="elo-slider">ELO: <span id="elo-value">1350</span></label><input type="range" id="elo-slider" min="0" max="40" value="10" title="Stockfish Skill Level"></div></div></div><div class="chess-board"></div><div class="chess-control"><button id="new-game-btn" class="hacker-btn">[ ♻ Neues Spiel ]</button></div></div><div id="promotion-modal" class="promotion-modal" aria-hidden="true"><div class="promotion-box"><div class="promotion-title">Bauernumwandlung</div><div class="promotion-options"><button class="promote-btn" data-piece="q">♕ Dame</button> <button class="promote-btn" data-piece="r">♖ Turm</button> <button class="promote-btn" data-piece="b">♗ Läufer</button> <button class="promote-btn" data-piece="n">♘ Springer</button></div></div></div>`; loaderDiv.remove(); chessWindow.querySelector('.terminal-header').insertAdjacentHTML('afterend', gameContentHTML); let game = new Chess(), stockfish = new Worker("js/stockfish.js"), gameHistory = [], selectedSquare = null, pendingPromotion = null, isGameOver = false; const boardDiv = chessWindow.querySelector('.chess-board'), statusDiv = chessWindow.querySelector('#chess-status'), newGameBtn = chessWindow.querySelector('#new-game-btn'), thinkingIndicator = chessWindow.querySelector('#thinking-indicator'), promotionModal = chessWindow.querySelector('#promotion-modal'), eloSlider = chessWindow.querySelector('#elo-slider'), eloValueSpan = chessWindow.querySelector('#elo-value'); function renderBoard() { boardDiv.innerHTML = ''; const boardData = game.board(), history = game.history({ verbose: true }), lastMove = history.length > 0 ? history[history.length - 1] : null; for (let row = 0; row < 8; row++) for (let col = 0; col < 8; col++) { const squareEl = document.createElement('div'), isLight = (row + col) % 2 === 0; squareEl.classList.add('chess-square', isLight ? 'light' : 'dark'); const squareName = String.fromCharCode(97 + col) + (8 - row); squareEl.dataset.square = squareName; if (lastMove) { if (lastMove.from === squareName) squareEl.classList.add('last-move-from'); if (lastMove.to === squareName) squareEl.classList.add('last-move-to'); } const piece = boardData[row][col]; if (piece) { const img = document.createElement('img'); img.src = pieceImages[piece.color][piece.type]; img.className = 'chess-piece-img'; squareEl.appendChild(img); } squareEl.addEventListener('click', handleSquareClick); boardDiv.appendChild(squareEl); } } function updateStatus() { let statusText = game.turn() === 'w' ? 'Weiß am Zug' : 'Schwarz (Bot) am Zug'; if (game.in_checkmate()) statusText = `Schachmatt! ${game.turn() === 'w' ? 'Schwarz' : 'Weiß'} gewinnt.`; else if (game.in_stalemate() || game.in_threefold_repetition() || game.in_draw()) statusText = 'Patt! Unentschieden.'; else if (game.in_check()) statusText += ' (im Schach)'; statusDiv.textContent = statusText; } function handleSquareClick(event) { if (game.turn() !== 'w' || game.game_over() || isGameOver) return; const clickedSquareName = event.currentTarget.dataset.square; if (selectedSquare) { const from = selectedSquare.dataset.square, to = clickedSquareName, move = game.moves({ square: from, verbose: true }).find(m => m.to === to); if (move) { if (move.flags.includes('p')) { pendingPromotion = { from, to }; promotionModal.classList.add('visible'); } else { makeMove(from, to); } } selectedSquare.classList.remove('selected'); document.querySelectorAll('.highlight-move, .highlight-capture').forEach(sq => sq.classList.remove('highlight-move', 'highlight-capture')); selectedSquare = null; } else { const piece = game.get(clickedSquareName); if (piece && piece.color === 'w') { selectedSquare = event.currentTarget; selectedSquare.classList.add('selected'); highlightValidMoves(clickedSquareName); } } } function highlightValidMoves(square) { const moves = game.moves({ square, verbose: true }); moves.forEach(move => { const targetSquare = boardDiv.querySelector(`[data-square="${move.to}"]`); if (targetSquare) targetSquare.classList.add(move.flags.includes('c') ? 'highlight-capture' : 'highlight-move'); }); } function makeMove(from, to, promotion) { if (game.move({ from, to, promotion })) { gameHistory.push(game.fen()); renderBoard(); updateStatus(); if (game.game_over()) { isGameOver = true; showGameOverPrompt(); } else { setTimeout(makeBotMove, 250); } } } promotionModal.querySelectorAll('.promote-btn').forEach(btn => { btn.onclick = () => { if (!pendingPromotion) return; const { from, to } = pendingPromotion; makeMove(from, to, btn.dataset.piece); promotionModal.classList.remove('visible'); pendingPromotion = null; }; }); function makeBotMove() { if (game.turn() === 'b' && !game.game_over()) { thinkingIndicator.style.display = 'block'; const skillLevel = Math.min(20, parseInt(eloSlider.value, 10) || 10); stockfish.postMessage(`setoption name Skill Level value ${skillLevel}`); stockfish.postMessage(`position fen ${game.fen()}`); stockfish.postMessage(`go movetime 500`); } } stockfish.onmessage = function(event) { const message = event.data || event; if (typeof message === 'string' && message.startsWith('bestmove')) { thinkingIndicator.style.display = 'none'; const move = message.split(' ')[1], from = move.substring(0, 2), to = move.substring(2, 4), promotion = move.length > 4 ? move.substring(4) : undefined; game.move({ from, to, promotion }); gameHistory.push(game.fen()); renderBoard(); updateStatus(); if (game.game_over()) { isGameOver = true; showGameOverPrompt(); } } }; function saveCurrentGame() { if (game.history().length === 0 || !currentUser) return; db.userGames[currentUser] = db.userGames[currentUser] || []; db.userGames[currentUser].push({ pgn: game.pgn(), fens: [...gameHistory], date: new Date().toISOString() }); saveDB(); } function showGameOverPrompt(isRestart = false) { const template = document.getElementById('game-over-modal-template'), modalClone = template.content.cloneNode(true); document.body.appendChild(modalClone); const modalElement = document.body.lastElementChild, titleEl = modalElement.querySelector('#modal-title'), textEl = modalElement.querySelector('#modal-text'), saveBtn = modalElement.querySelector('#modal-action-save'), newBtn = modalElement.querySelector('#modal-action-new'), closeBtn = modalElement.querySelector('#modal-action-close'); if (isRestart) { titleEl.textContent = "Partie läuft"; textEl.textContent = "Möchtest du die aktuelle Partie speichern, bevor du eine neue startest?"; } else { titleEl.textContent = "Partie beendet!"; textEl.textContent = `Möchtest du die Partie speichern? (${statusDiv.textContent})`; } saveBtn.onclick = () => { saveCurrentGame(); if (isRestart) initializeGame(); modalElement.remove(); }; newBtn.onclick = () => { initializeGame(); modalElement.remove(); }; closeBtn.onclick = () => { modalElement.remove(); }; } newGameBtn.addEventListener('click', () => { if (game.history().length > 0 && !isGameOver) { showGameOverPrompt(true); } else { initializeGame(); } }); eloSlider.addEventListener('input', (e) => { const sliderValue = parseInt(e.target.value, 10), minElo = 800, maxElo = 3500; eloValueSpan.textContent = Math.round(minElo + (sliderValue / 40) * (maxElo - minElo)); }); function initializeGame() { game.reset(); gameHistory = []; selectedSquare = null; pendingPromotion = null; isGameOver = false; stockfish.postMessage('ucinewgame'); renderBoard(); updateStatus(); } initializeGame(); }
-        function createReplayApp() { const content = `<div class="replay-viewer-container"><div class="replay-controls-top"><input id="replay-search-input" type="text" placeholder="Suche nach Datum oder PGN..."><button id="replay-import-btn" class="hacker-btn">Import</button><button id="replay-refresh-btn" class="hacker-btn">Refresh</button></div><div class="replay-list-container"></div><input type="file" id="replay-file-input" accept=".json" style="display:none;"></div>`; const replayWindow = createWindow('Reply Viewer', content, {width:'800px', height:'600px'}); const searchInput = replayWindow.querySelector('#replay-search-input'), importBtn = replayWindow.querySelector('#replay-import-btn'), refreshBtn = replayWindow.querySelector('#replay-refresh-btn'), listContainer = replayWindow.querySelector('.replay-list-container'), fileInput = replayWindow.querySelector('#replay-file-input'); let currentGames = []; function renderList(filter = '') { listContainer.innerHTML = ''; const filtered = currentGames.filter(g => { if (!filter) return true; const fLower = filter.toLowerCase(); return (g.date && g.date.toLowerCase().includes(fLower)) || (g.pgn && g.pgn.toLowerCase().includes(fLower)); }); if (filtered.length === 0) { listContainer.innerHTML = '<p>Keine Partien für diesen Benutzer gefunden.</p>'; return; } filtered.forEach((gameData, index) => { const item = document.createElement('div'); item.className = 'replay-list-item'; item.innerHTML = `<div class="replay-list-item-meta"><strong>${new Date(gameData.date).toLocaleString()}</strong><div style="font-size:0.8rem; opacity:0.7;">${gameData.pgn.split('\n')[0].slice(0, 60)}...</div></div><div><button class="hacker-btn danger">Löschen</button></div>`; item.querySelector('.replay-list-item-meta').onclick = () => openPlayer(gameData.fens); item.querySelector('button.danger').onclick = (e) => { e.stopPropagation(); if (confirm(`Soll die Partie vom ${new Date(gameData.date).toLocaleString()} wirklich gelöscht werden?`)) { const originalIndex = db.userGames[currentUser].findIndex(g => g.date === gameData.date); if (originalIndex > -1) { db.userGames[currentUser].splice(originalIndex, 1); saveDB(); loadAndRender(); } } }; listContainer.appendChild(item); }); } function openPlayer(fens) { if (document.querySelector('.replay-player-container')) return; const playerEl = document.createElement('div'); playerEl.className = 'replay-player-container'; playerEl.innerHTML = `<div id="replay-board-viewer" class="chess-board"></div><div class="replay-player-controls"><button id="player-prev" class="hacker-btn">◀</button><span id="replay-pos-viewer">0/0</span><button id="player-next" class="hacker-btn">▶</button><button id="player-close" class="hacker-btn">Schließen</button></div>`; document.body.appendChild(playerEl); const boardEl = playerEl.querySelector('#replay-board-viewer'), posEl = playerEl.querySelector('#replay-pos-viewer'), prevBtn = playerEl.querySelector('#player-prev'), nextBtn = playerEl.querySelector('#player-next'), closeBtn = playerEl.querySelector('#player-close'); let viewerGame = new Chess(), currentIndex = 0; function renderReplayBoard() { boardEl.innerHTML = ''; const boardData = viewerGame.board(); for (let row = 0; row < 8; row++) for (let col = 0; col < 8; col++) { const squareEl = document.createElement('div'); squareEl.className = `chess-square ${(row + col) % 2 === 0 ? 'light' : 'dark'}`; const piece = boardData[row][col]; if (piece) { const img = document.createElement('img'); img.src = pieceImages[piece.color][piece.type]; img.className = 'chess-piece-img'; squareEl.appendChild(img); } boardEl.appendChild(squareEl); } } function updatePlayerState() { viewerGame.load(fens[currentIndex]); posEl.textContent = `${currentIndex + 1}/${fens.length}`; renderReplayBoard(); } const keyHandler = (e) => { if (e.key === 'ArrowLeft') { if (currentIndex > 0) { currentIndex--; updatePlayerState(); } } else if (e.key === 'ArrowRight') { if (currentIndex < fens.length - 1) { currentIndex++; updatePlayerState(); } } else if (e.key === 'Escape') { closePlayer(); } }; function closePlayer() { document.removeEventListener('keydown', keyHandler); playerEl.remove(); } prevBtn.onclick = () => { if (currentIndex > 0) { currentIndex--; updatePlayerState(); } }; nextBtn.onclick = () => { if (currentIndex < fens.length - 1) { currentIndex++; updatePlayerState(); } }; closeBtn.onclick = closePlayer; document.addEventListener('keydown', keyHandler); updatePlayerState(); } function loadAndRender() { if (!currentUser) return; currentGames = (db.userGames[currentUser] || []).slice().reverse(); renderList(searchInput.value); } searchInput.addEventListener('input', () => renderList(searchInput.value)); refreshBtn.addEventListener('click', loadAndRender); importBtn.addEventListener('click', () => fileInput.click()); fileInput.addEventListener('change', (e) => { const file = e.target.files[0]; if (!file || !currentUser) return; const reader = new FileReader(); reader.onload = (event) => { try { const importedData = JSON.parse(event.target.result); let gamesToImport = Array.isArray(importedData) ? importedData : (importedData.games || [importedData]); db.userGames[currentUser] = db.userGames[currentUser] || []; db.userGames[currentUser].push(...gamesToImport); saveDB(); loadAndRender(); } catch (err) { alert('Import fehlgeschlagen. Bitte stelle sicher, dass es eine gültige JSON-Datei ist.'); } }; reader.readAsText(file); fileInput.value = ''; }); loadAndRender(); }
-
-        // =========================================================================
-        // BOOT-SEQUENZ & LOGIN-FLUSS
-        // =========================================================================
-        const loadingPhases = [ {title: "PHASE 1: SYSTEM-KERNEL LADEN", logs: [{text: "Initialisiere Core-Module...", delay: 600, status: "OK"}, {text: "Prüfe Speicherintegrität...", delay: 500, status: "OK"}], progress: 33}, {title: "PHASE 2: NETZWERK-PROTOKOLLE", logs: [{text: "WARNUNG: Fremdzugriff auf Port 80...", delay: 800, status: "WARN"}, {text: "Isoliere verdächtige Verbindung...", delay: 1000, status: "INFO"}, {text: "Netzwerk gesichert.", delay: 400, status: "SUCCESS"}], progress: 66}, {title: "PHASE 3: KERNKOMPONENTEN STARTEN", logs: [{text: "Rendere Partikel-Matrix...", delay: 700, status: "OK"}, {text: "Berechne Vektoren...", delay: 900, status: "OK"}], progress: 100} ];
-        async function runBootSequence() { loadingLog.style.opacity = 1; progressBarContainer.style.opacity = 1; let currentProgress = 0; for (const phase of loadingPhases) { loadingText.textContent = phase.title; for (const log of phase.logs) { const newLogLine = document.createElement('p'); newLogLine.classList.add('log-line'); newLogLine.innerHTML = `> <span class=\"status-${log.status.toLowerCase()}\">[ ${log.status} ]</span> ${log.text}`; loadingLog.appendChild(newLogLine); loadingLog.scrollTop = loadingLog.scrollHeight; await new Promise(r => setTimeout(r, log.delay)); } if (phase.action) phase.action(); updateProgressBar(currentProgress, phase.progress, 500); currentProgress = phase.progress; await new Promise(r => setTimeout(r, 800)); } await new Promise(r => setTimeout(r, 2500)); showLoginScreen(); }
-        function updateProgressBar(startWidth, targetWidth, duration) { const startTime = performance.now(); function step(timestamp) { const elapsed = timestamp - startTime, progress = Math.min(elapsed / duration, 1), easeProgress = 0.5 - 0.5 * Math.cos(progress * Math.PI); progressBar.style.width = (startWidth + (targetWidth - startWidth) * easeProgress) + '%'; if (progress < 1) window.requestAnimationFrame(step); } window.requestAnimationFrame(step); }
-        async function showLoginScreen() { loadingText.style.opacity = 0; accessGranted.style.display = 'block'; accessGranted.style.opacity = 1; await new Promise(r => setTimeout(r, 2000)); accessGranted.style.opacity = 0; await new Promise(r => setTimeout(r, 1000)); loader.style.display = 'none'; loginScreen.style.display = 'flex'; document.getElementById('username').focus(); }
-
-        // --- Event-Listener und Initialisierung ---
-        function setupLoginListeners() {
-            const usernameInput = document.getElementById('username');
-            const passwordInput = document.getElementById('password');
-            const loginBtn = document.getElementById('login-btn');
-            const registerBtn = document.getElementById('register-btn');
-            const loginMessage = document.getElementById('login-message');
-
-            const showMessage = (msg, isError = true) => {
-                loginMessage.textContent = msg;
-                loginMessage.style.color = isError ? '#ff4444' : '#00ff00';
-            };
-
-            const attemptLogin = () => {
-                const user = usernameInput.value.trim();
-                const pass = passwordInput.value.trim();
-                if (!user || !pass) return showMessage("Benutzername und Passwort erforderlich.");
-                if (db.users[user] && db.users[user] === pass) {
-                    currentUser = user;
-                    loginScreen.style.display = 'none';
-                    desktop.style.display = 'flex';
-                    showMessage("", false);
-                } else {
-                    showMessage("Falscher Benutzername oder Passwort.");
-                }
-            };
-
-            loginBtn.addEventListener('click', attemptLogin);
-            passwordInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') attemptLogin(); });
-
-            registerBtn.addEventListener('click', () => {
-                const user = usernameInput.value.trim();
-                const pass = passwordInput.value.trim();
-                if (!user || !pass) return showMessage("Benutzername und Passwort erforderlich.");
-                if (db.users[user]) {
-                    showMessage("Benutzername bereits vergeben.");
-                } else {
-                    db.users[user] = pass;
-                    db.userGames[user] = [];
-                    saveDB();
-                    showMessage("Registrierung erfolgreich! Bitte einloggen.", false);
-                }
-            });
-        }
-
-        function handleLogout() {
-            currentUser = null;
-            document.querySelectorAll('.terminal-window').forEach(win => win.remove());
-            desktop.style.display = 'none';
-            newTerminalBtn.style.display = 'none';
-            loginScreen.style.display = 'flex';
-            document.getElementById('username').value = '';
-            document.getElementById('password').value = '';
-            document.getElementById('username').focus();
-        }
-
-        newTerminalBtn.addEventListener('click', createTerminalWindow);
-        consoleIcon.addEventListener('click', createTerminalWindow);
-        chessIcon.addEventListener('click', createChessWindow);
-        replayIcon.addEventListener('click', createReplayApp);
-        logoutIcon.addEventListener('click', handleLogout);
-
-        window.onload = () => {
-            loadDB();
-            init3D(); 
-            animate3D(); 
-            runBootSequence();
-            setupLoginListeners();
-        };
-    </script>
-    <!-- DEBUG OVERLAY: paste directly before </body> -->
-    <script>
-    (function(){
-      // Create overlay
-      const overlay = document.createElement('div');
-      overlay.id = 'debug-overlay';
-      Object.assign(overlay.style, {
-        position:'fixed', right:'12px', bottom:'12px', width:'420px', maxHeight:'45vh',
-        background:'rgba(0,0,0,0.9)', color:'#fff', fontFamily:'monospace', fontSize:'13px',
-        border:'2px solid #ff4444', padding:'10px', zIndex:99999, overflowY:'auto', boxSizing:'border-box'
-      });
-      overlay.innerHTML = '<b style="color:#ff4444">DEBUG PANEL</b><div id="dbg-lines"></div><div style="margin-top:8px"><button id="dbg-refresh">Reload animation</button> <button id="dbg-copy">Copy logs</button></div>';
-      document.body.appendChild(overlay);
-
-      const lines = document.getElementById('dbg-lines');
-      const push = (t) => {
+    function log(msg) {
+      try {
         const p = document.createElement('div');
-        p.textContent = '[' + new Date().toLocaleTimeString() + '] ' + t;
-        p.style.marginBottom='6px';
-        lines.appendChild(p);
-        overlay.scrollTop = overlay.scrollHeight;
+        p.textContent = '» ' + msg;
+        loadingLogEl.appendChild(p);
+        loadingLogEl.scrollTop = loadingLogEl.scrollHeight;
+      } catch (e) {
+        console.log('LOG ERR', e);
+      }
+    }
+
+    // --------- API helpers ----------
+    async function registerToServer(username, password) {
+      const res = await fetch(`${API_BASE}/api/register`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ username, password })
+      });
+      if (!res.ok) throw await res.json();
+      return await res.json();
+    }
+    async function loginToServer(username, password) {
+      const res = await fetch(`${API_BASE}/api/login`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ username, password })
+      });
+      if (!res.ok) throw await res.json();
+      return await res.json();
+    }
+    async function checkMe() {
+      try {
+        const res = await fetch(`${API_BASE}/api/me`, { credentials: 'include' });
+        if (!res.ok) return null;
+        return await res.json();
+      } catch (e) {
+        return null;
+      }
+    }
+    async function logoutFromServer() {
+      try { await fetch(`${API_BASE}/api/logout`, { method: 'POST', credentials: 'include' }); } catch(e){/*ignore*/ }
+    }
+
+    // --------- Simple 3D animation (safe) ----------
+    // Expose init3D/animate3D on window so debug & external calls work
+    let scene, camera, renderer, particles = [], particleGeo, particleMat, animId;
+    const PARTICLE_COUNT = 1200;
+    function init3D() {
+      try {
+        // remove existing renderer if any
+        const existing = document.querySelector('#sphere-container canvas');
+        if (existing) existing.remove();
+
+        // Basic three.js scene
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+        camera.position.z = 12;
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        const container = document.getElementById('sphere-container');
+        container.appendChild(renderer.domElement);
+
+        // Particles group
+        particleGeo = new THREE.BufferGeometry();
+        const positions = new Float32Array(PARTICLE_COUNT * 3);
+        const colors = new Float32Array(PARTICLE_COUNT * 3);
+        const sizes = new Float32Array(PARTICLE_COUNT);
+
+        for (let i=0;i<PARTICLE_COUNT;i++){
+          const phi = Math.acos(2*Math.random()-1);
+          const theta = 2*Math.PI*Math.random();
+          const r = 2.0 + Math.random()*4.2;
+          const x = r * Math.sin(phi)*Math.cos(theta);
+          const y = r * Math.sin(phi)*Math.sin(theta);
+          const z = r * Math.cos(phi);
+          positions[i*3] = x;
+          positions[i*3+1] = y;
+          positions[i*3+2] = z;
+          const c = 0.6 + Math.random()*0.4;
+          colors[i*3] = 0.0*c; colors[i*3+1] = 1.0*c; colors[i*3+2] = 0.6*c;
+          sizes[i] = 1 + Math.random()*2.2;
+        }
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(positions,3));
+        particleGeo.setAttribute('color', new THREE.BufferAttribute(colors,3));
+        particleGeo.setAttribute('size', new THREE.BufferAttribute(sizes,1));
+
+        particleMat = new THREE.PointsMaterial({
+          size: 0.12,
+          vertexColors: true,
+          transparent: true,
+          opacity: 0.9,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        });
+
+        const points = new THREE.Points(particleGeo, particleMat);
+        scene.add(points);
+
+        // soft ambient glow
+        const light = new THREE.PointLight(0x66ff88, 0.6);
+        camera.add(light);
+        scene.add(camera);
+
+        window.addEventListener('resize', onWindowResize);
+        log('3D initialized');
+      } catch (err) {
+        console.error('init3D error', err);
+        log('3D init failed: ' + (err.message || err));
+      }
+    }
+    function animate3D() {
+      try {
+        if (!renderer) return;
+        const t = performance.now() * 0.0002;
+        // rotate whole scene slowly
+        scene.rotation.y = t * 0.2;
+        scene.rotation.x = Math.sin(t*0.15)*0.05;
+
+        // subtle per-vertex motion
+        const pos = particleGeo.attributes.position.array;
+        for (let i=0;i<PARTICLE_COUNT;i++){
+          const idx = i*3;
+          pos[idx+0] += Math.sin(t + i)*0.0009;
+          pos[idx+1] += Math.cos(t*0.7 + i)*0.0007;
+        }
+        particleGeo.attributes.position.needsUpdate = true;
+
+        renderer.render(scene, camera);
+        animId = requestAnimationFrame(animate3D);
+      } catch (err) {
+        console.error('animate3D error', err);
+        log('3D animate failed: ' + (err.message || err));
+      }
+    }
+    function onWindowResize(){
+      if (!camera || !renderer) return;
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // --------- Boot sequence ----------
+    const phases = [
+      { title: 'PHASE 1: SYSTEM-KERNEL LADEN', logs:[{t:'Initialisiere Core-Module...',d:500},{t:'Initialisiere Grafikmodule...',d:500}],progress:30 },
+      { title: 'PHASE 2: NETZWERK-PROTOKOLLE', logs:[{t:'Prüfe Netzwerk...',d:700},{t:'Sicherheits-Handshake OK',d:450}],progress:66 },
+      { title: 'PHASE 3: KERNKOMPONENTEN STARTEN', logs:[{t:'Rendere Partikel-Matrix...',d:700},{t:'Boot abgeschlossen',d:600}],progress:100 }
+    ];
+
+    async function runBootSequence(){
+      loadingLogEl.style.display='block';
+      progressFill.style.width = '0%';
+      log('Boot started');
+      for (let p of phases){
+        document.getElementById('loading-text').textContent = p.title;
+        for (let li of p.logs){
+          log(li.t);
+          await new Promise(r => setTimeout(r, li.d));
+        }
+        progressFill.style.width = p.progress + '%';
+        await new Promise(r => setTimeout(r, 350));
+      }
+      await new Promise(r => setTimeout(r, 700));
+      document.getElementById('access-granted').style.display = 'block';
+      await new Promise(r => setTimeout(r, 900));
+      document.getElementById('loader').style.display = 'none';
+      await showLoginScreen();
+    }
+
+    // --------- Login UI wiring ----------
+    function setupLoginListeners(){
+      const usernameInput = document.getElementById('username');
+      const passwordInput = document.getElementById('password');
+      const loginBtn = document.getElementById('login-btn');
+      const registerBtn = document.getElementById('register-btn');
+      const loginMessage = document.getElementById('login-message');
+
+      const showMessage = (msg, error=true)=>{
+        loginMessage.textContent = msg;
+        loginMessage.style.color = error ? '#ff6666' : '#66ff88';
       };
 
-      // Global error handlers
-      window.addEventListener('error', function(ev){
-        push('ERROR: ' + (ev.message || ev.error?.message) + ' @ ' + (ev.filename || '') + ':' + (ev.lineno||'') );
-        console.error(ev.error || ev.message, ev);
-      }, true);
-      window.addEventListener('unhandledrejection', function(ev){
-        push('UNHANDLED REJECTION: ' + (ev.reason?.message || JSON.stringify(ev.reason)));
-        console.error(ev.reason);
-      });
-
-      // WebGL support check
-      (function checkWebGL(){
-        let canvas = document.createElement('canvas');
-        let gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-        if (!gl) push('WebGL not supported / disabled. 3D will not run.');
-        else push('WebGL available.');
-      })();
-
-      // Check important script URLs (adjust names if your main scripts differ)
-      const toCheck = [
-        {name:'three.js (CDN)', url:'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'},
-        {name:'main index script', url: (function(){
-            // try to find first script with src that looks like your app
-            const s = Array.from(document.scripts).reverse().find(x => x.src && !x.src.includes('debug-overlay'));
-            return s ? s.src : '/';
-        })()}
-      ];
-      toCheck.forEach(async (it) => {
+      async function doLogin(){
+        const user = usernameInput.value.trim();
+        const pass = passwordInput.value.trim();
+        if (!user || !pass) return showMessage('Benutzer & Passwort benötigt');
+        showMessage('...', false);
         try {
-          const res = await fetch(it.url, {method:'HEAD', cache:'no-store'});
-          if (!res.ok) push(`MISSING: ${it.name} -> ${it.url} (status ${res.status})`);
-          else push(`Loaded: ${it.name}`);
-        } catch (e) {
-          push(`Fetch error for ${it.name}: ${e.message}`);
+          await loginToServer(user, pass);
+          currentUser = user;
+          document.getElementById('login-screen').style.display = 'none';
+          document.getElementById('desktop').style.display = 'block';
+          showMessage('', false);
+        } catch (err) {
+          console.warn('login failed', err);
+          showMessage(err?.error || 'Login fehlgeschlagen');
+        }
+      }
+      loginBtn.addEventListener('click', doLogin);
+      passwordInput.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') doLogin(); });
+
+      registerBtn.addEventListener('click', async ()=>{
+        const user = usernameInput.value.trim();
+        const pass = passwordInput.value.trim();
+        if (!user || !pass) return showMessage('Benutzer & Passwort benötigt');
+        showMessage('Registriere...', false);
+        try {
+          await registerToServer(user, pass);
+          currentUser = user;
+          document.getElementById('login-screen').style.display = 'none';
+          document.getElementById('desktop').style.display = 'block';
+          showMessage('Registrierung ok', false);
+        } catch (err) {
+          console.warn('register failed', err);
+          showMessage(err?.error || 'Registrierung fehlgeschlagen');
         }
       });
+    }
 
-      // Button handlers
-      document.getElementById('dbg-refresh').addEventListener('click', () => {
-        push('Attempting to call init3D() and animate3D() if available...');
+    // Logout handler
+    function handleLogout(){
+      logoutFromServer();
+      document.getElementById('desktop').style.display = 'none';
+      document.getElementById('login-screen').style.display = 'flex';
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
+    }
+
+    // attach icons
+    document.getElementById('logout-icon').addEventListener('click', handleLogout);
+
+    // --------- Auto-login check & showLoginScreen ----------
+    let currentUser = null;
+    async function showLoginScreen(){
+      // attempt checkMe
+      const me = await checkMe();
+      if (me && me.username){
+        currentUser = me.username;
+        document.getElementById('desktop').style.display = 'block';
+        document.getElementById('login-screen').style.display = 'none';
+      } else {
+        document.getElementById('login-screen').style.display = 'flex';
+      }
+    }
+
+    // --------- Debug overlay (in-page) ----------
+    function installDebug(){
+      try {
+        const dbg = document.getElementById('debug-overlay');
+        dbg.style.display = 'block';
+        dbg.innerHTML = '<b>DEBUG PANEL</b><div id="dbg-lines" style="margin-top:8px;max-height:32vh;overflow:auto"></div>';
+        const dlines = document.getElementById('dbg-lines');
+        function dbglog(t){ const e=document.createElement('div'); e.textContent = '['+new Date().toLocaleTimeString()+'] '+t; dlines.appendChild(e); dlines.scrollTop=dlines.scrollHeight; }
+        window.addEventListener('error', ev => dbglog('ERROR: '+(ev.message||ev.error?.message)));
+        window.addEventListener('unhandledrejection', ev => dbglog('UNHANDLED REJECTION: '+(ev.reason?.message||JSON.stringify(ev.reason))));
+        dbglog('Debug overlay active');
+      } catch(e){ console.warn('debug install err', e); }
+    }
+
+    // --------- initialize app ----------
+    window.addEventListener('load', async ()=>{
+      // ensure three exists
+      if (!window.THREE) {
+        // try dynamic load fallback (shouldn't happen because we loaded in head)
         try {
-          if (typeof init3D === 'function') init3D();
-          if (typeof animate3D === 'function') animate3D();
-          push('Called init3D/animate3D (if defined). Check console for errors.');
-        } catch (e) {
-          push('Error calling animation functions: ' + e.message);
-          console.error(e);
+          await new Promise((res, rej) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+            s.onload = res; s.onerror = rej; document.head.appendChild(s);
+          });
+          log('three.js loaded (fallback)');
+        } catch(e){
+          log('three.js could not be loaded: ' + e.message);
         }
-      });
+      }
 
-      document.getElementById('dbg-copy').addEventListener('click', () => {
-        const text = Array.from(lines.children).map(n => n.textContent).join('\\n');
-        navigator.clipboard?.writeText(text).then(()=>push('Logs copied to clipboard'), ()=>push('Copy failed'));
-      });
+      // init 3D & start animation
+      init3D();
+      animate3D();
+      installDebug();
+      setupLoginListeners();
 
-      // Print an initial message
-      push('Debug panel initialized. Waiting for JS errors / network checks...');
-    })();
-    </script>
+      // run boot sequence (this will hide loader and show login/desktop)
+      try {
+        await runBootSequence();
+      } catch (e) {
+        console.error('Boot error', e);
+        log('Boot crashed: ' + (e.message||e));
+        // still try to show login
+        document.getElementById('loader').style.display = 'none';
+        await showLoginScreen();
+      }
+    });
 
+    // Expose for debug & manual control
+    window.init3D = init3D;
+    window.animate3D = animate3D;
+    window.__app = { registerToServer, loginToServer, checkMe, logoutFromServer };
+  })();
+  </script>
 </body>
 </html>
