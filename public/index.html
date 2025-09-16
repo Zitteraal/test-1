@@ -537,5 +537,88 @@
             setupLoginListeners();
         };
     </script>
+    <!-- DEBUG OVERLAY: paste directly before </body> -->
+    <script>
+    (function(){
+      // Create overlay
+      const overlay = document.createElement('div');
+      overlay.id = 'debug-overlay';
+      Object.assign(overlay.style, {
+        position:'fixed', right:'12px', bottom:'12px', width:'420px', maxHeight:'45vh',
+        background:'rgba(0,0,0,0.9)', color:'#fff', fontFamily:'monospace', fontSize:'13px',
+        border:'2px solid #ff4444', padding:'10px', zIndex:99999, overflowY:'auto', boxSizing:'border-box'
+      });
+      overlay.innerHTML = '<b style="color:#ff4444">DEBUG PANEL</b><div id="dbg-lines"></div><div style="margin-top:8px"><button id="dbg-refresh">Reload animation</button> <button id="dbg-copy">Copy logs</button></div>';
+      document.body.appendChild(overlay);
+
+      const lines = document.getElementById('dbg-lines');
+      const push = (t) => {
+        const p = document.createElement('div');
+        p.textContent = '[' + new Date().toLocaleTimeString() + '] ' + t;
+        p.style.marginBottom='6px';
+        lines.appendChild(p);
+        overlay.scrollTop = overlay.scrollHeight;
+      };
+
+      // Global error handlers
+      window.addEventListener('error', function(ev){
+        push('ERROR: ' + (ev.message || ev.error?.message) + ' @ ' + (ev.filename || '') + ':' + (ev.lineno||'') );
+        console.error(ev.error || ev.message, ev);
+      }, true);
+      window.addEventListener('unhandledrejection', function(ev){
+        push('UNHANDLED REJECTION: ' + (ev.reason?.message || JSON.stringify(ev.reason)));
+        console.error(ev.reason);
+      });
+
+      // WebGL support check
+      (function checkWebGL(){
+        let canvas = document.createElement('canvas');
+        let gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (!gl) push('WebGL not supported / disabled. 3D will not run.');
+        else push('WebGL available.');
+      })();
+
+      // Check important script URLs (adjust names if your main scripts differ)
+      const toCheck = [
+        {name:'three.js (CDN)', url:'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'},
+        {name:'main index script', url: (function(){
+            // try to find first script with src that looks like your app
+            const s = Array.from(document.scripts).reverse().find(x => x.src && !x.src.includes('debug-overlay'));
+            return s ? s.src : '/';
+        })()}
+      ];
+      toCheck.forEach(async (it) => {
+        try {
+          const res = await fetch(it.url, {method:'HEAD', cache:'no-store'});
+          if (!res.ok) push(`MISSING: ${it.name} -> ${it.url} (status ${res.status})`);
+          else push(`Loaded: ${it.name}`);
+        } catch (e) {
+          push(`Fetch error for ${it.name}: ${e.message}`);
+        }
+      });
+
+      // Button handlers
+      document.getElementById('dbg-refresh').addEventListener('click', () => {
+        push('Attempting to call init3D() and animate3D() if available...');
+        try {
+          if (typeof init3D === 'function') init3D();
+          if (typeof animate3D === 'function') animate3D();
+          push('Called init3D/animate3D (if defined). Check console for errors.');
+        } catch (e) {
+          push('Error calling animation functions: ' + e.message);
+          console.error(e);
+        }
+      });
+
+      document.getElementById('dbg-copy').addEventListener('click', () => {
+        const text = Array.from(lines.children).map(n => n.textContent).join('\\n');
+        navigator.clipboard?.writeText(text).then(()=>push('Logs copied to clipboard'), ()=>push('Copy failed'));
+      });
+
+      // Print an initial message
+      push('Debug panel initialized. Waiting for JS errors / network checks...');
+    })();
+    </script>
+
 </body>
 </html>
