@@ -1,7 +1,7 @@
 {
   "name": "hacker-chess",
   "version": "1.0.0",
-  "description": "Hacker Terminal Chess Backend",
+  "description": "Hacker Terminal Chess Backend (Postgres-ready)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -15,6 +15,6 @@
     "express": "^4.18.2",
     "express-session": "^1.17.3",
     "helmet": "^6.0.1",
-    "pg": "^8.11.1",
+    "pg": "^8.11.1"
   }
 }
