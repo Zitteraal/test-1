@@ -1,399 +1,2107 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Hacker Terminal — STASI</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hacker-Terminal V2</title>
 
-  <!-- three.js CDN (r128) + fallback loader built-in below -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Import der THREE.js-Bibliothek für 3D-Grafiken -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
-  <style>
-    /* Minimal, take-what-you-need styling matching previous look */
-    :root{--green:#00ff66;--bg:#000000}
-    html,body{height:100%;margin:0;background:var(--bg);color:var(--green);font-family:'VT323',monospace;overflow:hidden}
-    #loader{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:60}
-    #loading-text{font-size:36px;color:var(--green);text-shadow:0 0 10px rgba(0,255,102,0.25)}
-    #loading-log{position:fixed;left:16px;bottom:16px;width:420px;height:180px;background:rgba(0,0,0,0.6);border:1px solid var(--green);padding:12px;overflow:auto;color:#bfffcf;font-size:12px;display:block}
-    #progress-bar-container{width:60%;height:6px;background:rgba(255,255,255,0.03);margin-top:18px;border-radius:4px;overflow:hidden}
-    #progress-bar-fill{height:100%;width:0;background:linear-gradient(90deg,#00ff66,#00a08a);transition:width .4s}
-    #access-granted{font-size:20px;color:var(--green);margin-top:12px;display:none}
-    #sphere-container{position:fixed;inset:0;z-index:10;pointer-events:none}
-    #login-screen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:80}
-    .login-box{background:rgba(0,0,0,0.85);border:2px solid var(--green);padding:24px;border-radius:8px;min-width:340px;color:var(--green)}
-    label{display:block;font-size:13px;margin-bottom:6px}
-    input{width:100%;padding:8px;border-radius:4px;border:1px solid rgba(0,255,102,0.15);background:#061106;color:var(--green);font-family:inherit}
-    .hacker-btn{background:transparent;border:1px solid var(--green);color:var(--green);padding:8px 12px;margin-right:8px;border-radius:6px;cursor:pointer}
-    .hacker-btn.primary{background:var(--green);color:#002b00}
-    #desktop{position:fixed;inset:0;display:none;z-index:50}
-    .desktop-icon{position:absolute;left:20px;top:20px;width:88px;height:88px;border:1px dashed rgba(0,255,102,0.12);display:flex;align-items:center;justify-content:center;color:var(--green);border-radius:8px;cursor:pointer}
-    .desktop-icon + .desktop-icon{top:120px}
-    .icon-label{display:block;text-align:center;font-size:12px;margin-top:8px}
-    /* Debug overlay style (small) */
-    #debug-overlay{position:fixed;right:12px;bottom:12px;width:420px;max-height:48vh;overflow:auto;background:rgba(0,0,0,0.9);color:#fff;border:1px solid #ff4444;padding:8px;z-index:99999;font-family:monospace;font-size:12px}
-  </style>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        /* ========================================================================= */
+        /* ALLGEMEINES STYLING UND FONT */
+        /* ========================================================================= */
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            background: #000;
+            color: #00FF00;
+            font-family: 'VT323', monospace;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ========================================================================= */
+        /* LADEBILDSCHIRM-STYLING (Hacker-Animation) */
+        /* ========================================================================= */
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 1.5s ease-in-out;
+            text-align: center;
+        }
+
+        #sphere-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        #loading-text {
+            position: absolute;
+            font-size: clamp(1rem, 4vw, 2.5rem);
+            color: #00FF00;
+            text-shadow: 0 0 10px #00FF00;
+            z-index: 12;
+            white-space: nowrap;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        #loading-log {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 450px;
+            max-height: 250px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 8px;
+            border: 2px solid #00FF00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.7);
+            z-index: 13;
+            padding: 15px;
+            overflow-y: auto;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        .log-line {
+            color: #00FF00;
+            margin: 0;
+            white-space: pre-wrap;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+            animation-delay: var(--delay);
+        }
+
+        .status-ok {
+            color: #00FF00;
+        }
+
+        .status-info {
+            color: #FFFF00;
+        }
+
+        .status-warn {
+            color: #FFA500;
+        }
+
+        .status-fail {
+            color: #FF0000;
+        }
+
+        .status-success {
+            color: #00FF00;
+        }
+
+        #progress-bar-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            height: 25px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 2px solid #00FF00;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
+            overflow: hidden;
+            z-index: 13;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        #progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background-color: #00FF00;
+            transition: width 0.5s ease-out;
+            box-shadow: 0 0 8px #00FF00;
+        }
+
+        #access-granted {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(3.5rem, 12vw, 6rem);
+            text-shadow: 0 0 25px #00FF00, 0 0 50px rgba(0, 255, 0, 0.7);
+            animation: glitch-anim 0.6s infinite linear alternate, fadeIn 1.2s forwards;
+            display: none;
+            opacity: 0;
+            z-index: 11;
+            transition: opacity 1.2s ease-in-out;
+        }
+
+        .glitch-text {
+            animation: glitch-anim 2.5s infinite linear alternate;
+        }
+
+        @keyframes glitch-anim {
+            0% {
+                text-shadow: none;
+            }
+
+            10% {
+                text-shadow: 0.04em 0.03em 0 #00FF00, -0.02em -0.02em 0 #00FFFF, 0.03em 0.04em 0 #FFFF00;
+            }
+
+            20% {
+                text-shadow: none;
+            }
+
+            30% {
+                text-shadow: 0.02em 0.03em 0 #FF0000, -0.04em -0.02em 0 #00FFFF, 0.02em 0.03em 0 #00FF00;
+            }
+
+            40% {
+                text-shadow: none;
+            }
+
+            50% {
+                text-shadow: -0.03em -0.04em 0 #00FFFF, 0.03em 0.02em 0 #FF0000, -0.02em -0.03em 0 #00FF00;
+            }
+
+            60% {
+                text-shadow: none;
+            }
+
+            70% {
+                text-shadow: 0.04em 0.02em 0 #00FF00, -0.03em -0.03em 0 #FFFF00, 0.04em 0.02em 0 #FF0000;
+            }
+
+            80% {
+                text-shadow: none;
+            }
+
+            90% {
+                text-shadow: -0.02em -0.04em 0 #FFFF00, 0.03em 0.03em 0 #00FFFF, -0.04em -0.02em 0 #00FF00;
+            }
+
+            100% {
+                text-shadow: none;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* ========================================================================= */
+        /* DESKTOP-STYLING */
+        /* ========================================================================= */
+        #desktop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            z-index: 50;
+            display: none;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .desktop-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 120px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .desktop-icon:hover {
+            background-color: rgba(0, 255, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .icon-svg {
+            width: 60px;
+            height: 60px;
+            fill: #00FF00;
+            filter: drop-shadow(0 0 8px rgba(0, 255, 0, 0.6));
+        }
+
+        .icon-label {
+            margin-top: 8px;
+            color: #00FF00;
+            text-shadow: 0 0 5px #00FF00;
+            font-size: 1.2rem;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        /* ========================================================================= */
+        /* MAIN APP STYLING (TERMINAL & SCHACH) */
+        /* ========================================================================= */
+        #newTerminalBtn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: none;
+            padding: 8px 12px;
+            background-color: #0a0a0a;
+            color: #00FF00;
+            border: 2px solid #00FF00;
+            font-family: 'VT323', monospace;
+            font-size: 1.5rem;
+            text-shadow: 0 0 10px #00FF00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.7);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 50;
+        }
+
+        #newTerminalBtn:hover {
+            background-color: #001a00;
+            box-shadow: 0 0 25px rgba(0, 255, 0, 1);
+            transform: scale(1.05);
+        }
+
+        .terminal-window {
+            width: 70%;
+            max-width: 700px;
+            height: 80%;
+            max-height: 500px;
+            background-color: #000;
+            border: 2px solid #00FF00;
+            box-shadow: 0 0 25px rgba(0, 255, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-radius: 8px;
+            position: absolute;
+            z-index: 2;
+            resize: both;
+            overflow: auto;
+        }
+
+        .terminal-header {
+            background-color: #0a0a0a;
+            color: #00FF00;
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #00FF00;
+            cursor: grab;
+        }
+
+        .terminal-header h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            text-shadow: 0 0 6px #00FF00;
+        }
+
+        .close-btn {
+            background-color: transparent;
+            color: #00FF00;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.3s ease, text-shadow 0.3s ease;
+            text-shadow: 0 0 8px #00FF00;
+        }
+
+        .close-btn:hover {
+            color: #FF0000;
+            text-shadow: 0 0 12px #FF0000;
+        }
+
+        .terminal-output {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            background-color: rgba(13, 13, 13, 0.6);
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            font-size: 1.1rem;
+            line-height: 1.2;
+            white-space: pre-wrap;
+        }
+
+        .terminal-output::-webkit-scrollbar {
+            display: none;
+        }
+
+        .log-entry {
+            max-width: 100%;
+            word-wrap: break-word;
+            font-family: 'VT323', monospace;
+            color: #00FF00;
+        }
+
+        .user-input-line {
+            color: #FFFFFF;
+            font-weight: bold;
+        }
+
+        .terminal-input-container {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            background-color: rgba(13, 13, 13, 0.95);
+            border-top: 2px solid #00FF00;
+            font-size: 1.1rem;
+        }
+
+        .prompt-symbol {
+            color: #00FF00;
+            font-size: 1.2rem;
+            margin-right: 8px;
+        }
+
+        .terminal-input-container input[type="text"] {
+            flex-grow: 1;
+            border: none;
+            background-color: transparent;
+            color: #00FF00;
+            font-size: 1.1rem;
+            outline: none;
+            font-family: 'VT323', monospace;
+        }
+
+        .terminal-input-container button {
+            background-color: #008800;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 400;
+            transition: transform 0.3s ease, box-shadow 0.4s ease;
+            box-shadow: 0 0 8px rgba(0, 255, 0, 0.6);
+            font-family: 'VT323', monospace;
+        }
+
+        .terminal-input-container button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 12px rgba(0, 255, 0, 0.8);
+        }
+
+        /* ========================================================================= */
+        /* SCHACH-STYLING */
+        /* ========================================================================= */
+        /* ========================= Chroma Hacker Chess - Cleaned & Polished ========================= */
+        :root{
+          --neon: #02ff6a;
+          --neon-2: #27d4ff;
+          --panel-bg: rgba(6,6,6,0.86);
+          --board-dark: #222;
+          --board-light: #555;
+          --token-shadow: rgba(0,0,0,0.45);
+          --card-bg: rgba(8,8,8,0.88);
+        }
+
+        /* Wrapper / Container */
+        .chess-container {
+          flex-grow: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: flex-start;
+          padding: 20px;
+          box-sizing: border-box;
+        }
+
+        /* Topbar: Titel + Status + Controls */
+        .chess-topbar{
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap:12px;
+          padding:12px 16px;
+          background: linear-gradient(90deg, rgba(0,0,0,0.6), rgba(0,0,0,0.35));
+          border-bottom: 1px solid rgba(0,255,120,0.06);
+          width:100%;
+          box-sizing:border-box;
+          color: var(--neon);
+          font-family: "VT323", monospace;
+        }
+
+        /* controls right */
+        .chess-controls-right {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        /* difficulty select */
+        #difficulty-select {
+          background: transparent;
+          color: var(--neon);
+          border: 1px solid var(--neon);
+          padding: 4px 8px;
+          font-family: 'VT323', monospace;
+          font-size: 1rem;
+          border-radius: 6px;
+          cursor: pointer;
+          box-shadow: 0 0 8px rgba(0,255,120,0.06);
+        }
+
+        /* Main layout: info + board + controls */
+        .chess-board-container{
+          display: flex;
+          gap: 20px;
+          align-items: flex-start;
+          justify-content: flex-start; /* wichtig: linksbündig (Controls links) */
+          padding: 18px;
+          box-sizing: border-box;
+          width: 100%;
+        }
+
+        /* Info column left (status + moves etc.) */
+        .chess-info {
+          order: 0;
+          width: 34%;
+          min-width: 220px;
+          color: var(--neon);
+          font-family: "VT323", monospace;
+          padding-left: 12px;
+          box-sizing: border-box;
+          align-self: flex-start;
+        }
+
+        /* Chess card / board wrapper */
+        .chess-board {
+          display:grid;
+          grid-template-columns: repeat(8, 1fr);
+          grid-template-rows: repeat(8, 1fr);
+
+          width: min(72vmin, 640px);
+          height: min(72vmin, 640px);
+          max-width: 92vw;
+          max-height: 92vh;
+
+          background: linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.35));
+          border-radius: 14px;
+          padding: 8px;
+          box-sizing: border-box;
+          box-shadow:
+            0 10px 40px rgba(2,255,120,0.05),
+            inset 0 1px 0 rgba(255,255,255,0.02);
+          border: 1px solid rgba(0,255,120,0.06);
+          overflow: visible;
+          position: relative;
+        }
+
+        /* Single square (grid cell) */
+        .square{
+          width:100%;
+          height:100%;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          box-sizing:border-box;
+          position:relative;
+          transition: background 160ms ease, transform 140ms ease;
+          overflow: visible;
+          border-radius: 6px;
+        }
+
+        /* light / dark squares */
+        .square.light {
+          background: linear-gradient(180deg, rgba(90,90,90,0.96), rgba(110,110,110,0.96));
+        }
+        .square.dark {
+          background: linear-gradient(180deg, rgba(34,34,34,0.96), rgba(40,40,40,0.96));
+        }
+
+        /* piece token (round chip behind the emoji) */
+        .chess-piece {
+          width: 72%;
+          height: 72%;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          border-radius: 999px;
+          font-size: clamp(1.6rem, 4vmin, 2.6rem);
+          line-height: 1;
+          z-index:2;
+          pointer-events: none;
+          transition: transform 160ms ease, box-shadow 160ms ease;
+          box-shadow: 0 10px 26px var(--token-shadow);
+          position: relative;
+        }
+
+        /* pseudo round background */
+        .chess-piece::before {
+          content: '';
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+          width: 94%;
+          height: 94%;
+          border-radius: 50%;
+          z-index: -1;
+          background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.06), rgba(0,0,0,0.08));
+          box-shadow: inset 0 -8px 20px rgba(0,0,0,0.45);
+          pointer-events: none;
+        }
+
+        /* white / black token visuals */
+        .white-piece {
+          background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(235,235,235,0.98));
+          color: #0a0a0a;
+          -webkit-text-stroke: 0.6px rgba(0,0,0,0.28);
+        }
+        .black-piece {
+          background: radial-gradient(circle at 30% 30%, rgba(60,60,60,0.96), rgba(30,30,30,0.96));
+          color: rgba(210,255,210,0.94);
+          mix-blend-mode: screen;
+        }
+
+        /* hover and select effects */
+        .square:hover .chess-piece { transform: translateY(-4%); }
+        .selected { outline: 3px solid rgba(2,255,106,0.12); box-shadow: 0 10px 30px rgba(2,255,106,0.04) inset; }
+
+        /* highlights */
+        .highlight-move { outline: 3px solid rgba(0,220,140,0.16); box-shadow: 0 6px 18px rgba(0,220,140,0.04) inset; }
+        .highlight-capture { outline: 3px solid rgba(255,100,100,0.14); box-shadow: 0 6px 18px rgba(255,100,100,0.04) inset; }
+
+        /* Last move styling & animation */
+        .last-move-from { box-shadow: 0 0 0 3px rgba(2,255,106,0.06) inset; transform: translateZ(0); }
+        .last-move-to   { box-shadow: 0 0 0 4px rgba(42,180,255,0.08) inset; transform: translateZ(0); }
+        .last-move-animate { animation: lm-pulse 1100ms cubic-bezier(.2,.9,.3,1); z-index:3; }
+        @keyframes lm-pulse { 0%{ transform:scale(1) } 15%{ transform:scale(1.06) } 60%{ transform:scale(1.02) } 100%{ transform:scale(1) } }
+
+        /* control area (right): big new-game button */
+        .chess-control {
+          order: 0;
+          position: static;      /* <--- WICHTIG: nicht absolut */
+          margin-top: 12px;
+          display: flex;
+          gap: 12px;
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .chess-control button {
+          background: linear-gradient(180deg, rgba(0,0,0,0.7), rgba(0,0,0,0.45));
+          border: 2px solid rgba(2,255,106,0.12);
+          color: var(--neon);
+          padding: 12px 18px;
+          font-family: "VT323", monospace;
+          font-size: 1.05rem;
+          border-radius: 10px;
+          cursor: pointer;
+          box-shadow: 0 8px 30px rgba(2,255,106,0.04);
+        }
+
+        /* responsive: stack info above board on smaller screens */
+        @media (max-width:900px) {
+          .chess-board-container { gap: 12px; flex-direction: column; align-items:center; }
+          .chess-info { width: 92%; padding: 6px 12px; text-align:left; }
+          .chess-control { position: static; transform:none; margin-top:10px; }
+          .chess-board { width: min(88vmin, 92vw); height: min(88vmin, 92vw); }
+        }
+
+        /* small screens: smaller pieces */
+        @media (max-width:420px) {
+          .chess-piece { font-size: clamp(1.6rem, 6vmin, 2.6rem); }
+          .chess-piece::before { width: 88%; height: 88%; }
+        }
+
+    </style>
 </head>
+
 <body>
-  <!-- Loader / Boot -->
-  <div id="loader" role="dialog" aria-hidden="false">
-    <div id="sphere-container" aria-hidden="true"></div>
-    <div id="loading-text">Starte System...</div>
-    <div id="progress-bar-container" aria-hidden="true"><div id="progress-bar-fill"></div></div>
-    <div id="access-granted">SYSTEM ONLINE</div>
-    <div id="loading-log" aria-hidden="false"></div>
-  </div>
 
-  <!-- Login screen -->
-  <div id="login-screen">
-    <div class="login-box">
-      <h2>AUTHENTIFIZIERUNG</h2>
-      <div style="margin-bottom:10px">
-        <label for="username">Benutzername</label>
-        <input id="username" autocomplete="username" />
-      </div>
-      <div style="margin-bottom:12px">
-        <label for="password">Passwort</label>
-        <input id="password" type="password" autocomplete="current-password" />
-      </div>
-      <div style="display:flex;align-items:center">
-        <button id="login-btn" class="hacker-btn">LOGIN</button>
-        <button id="register-btn" class="hacker-btn primary">REGISTRIEREN</button>
-      </div>
-      <p id="login-message" style="margin-top:10px;color:#ff6666"></p>
+    <!-- ========================================================================= -->
+    <!-- Ladebildschirm-Struktur (Hacker-Animation) -->
+    <!-- ========================================================================= -->
+    <div id="loader">
+        <div id="sphere-container"></div>
+        <div id="loading-text">Starte System...</div>
+        <div id="loading-log"></div>
+        <div id="progress-bar-container">
+            <div id="progress-bar-fill"></div>
+        </div>
+        <div id="access-granted">
+            <span class="glitch-text">SYSTEM ONLINE</span>
+        </div>
     </div>
-  </div>
 
-  <!-- Desktop (icons placeholders) -->
-  <div id="desktop">
-    <div class="desktop-icon" id="console-icon" style="left:20px;top:20px"><div class="icon-label">Konsole</div></div>
-    <div class="desktop-icon" id="chess-icon" style="left:20px;top:120px"><div class="icon-label">Schach</div></div>
-    <div class="desktop-icon" id="replay-icon" style="left:20px;top:220px"><div class="icon-label">Replays</div></div>
-    <div class="desktop-icon" id="logout-icon" style="left:20px;top:320px"><div class="icon-label">Logout</div></div>
-  </div>
+    <!-- ========================================================================= -->
+    <!-- DESKTOP-ANSICHT -->
+    <!-- ========================================================================= -->
+    <div id="desktop">
+        <div class="desktop-icon" id="console-icon">
+            <svg class="icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path
+                    d="M20 3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM4 19V5h16l-.001 14H4zm1-3h14v1H5v-1zm0-3h14v1H5v-1zm0-3h14v1H5v-1z" />
+            </svg>
+            <span class="icon-label">Konsole</span>
+        </div>
+        <div class="desktop-icon" id="chess-icon">
+            <svg class="icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path
+                    d="M16 8.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM12.5 10c-.28 0-.5.22-.5.5v5c0 .28.22.5.5.5h1c.28 0 .5-.22.5-.5v-5c0-.28-.22-.5-.5-.5h-1zM18 10.5c-.28 0-.5.22-.5.5v5c0 .28.22.5.5.5h1c.28 0 .5-.22.5-.5v-5c0-.28-.22-.5-.5-.5h-1zM6 10.5c-.28 0-.5.22-.5.5v5c0 .28.22.5.5.5h1c.28 0 .5-.22.5-.5v-5c0-.28-.22-.5-.5-.5H6zM15.5 10c-.28 0-.5.22-.5.5v5c0 .28.22.5.5.5h1c.28 0 .5-.22.5-.5v-5c0-.28-.22-.5-.5-.5h-1zM11.5 10c-.28 0-.5.22-.5.5v5c0 .28.22.5.5.5h1c.28 0 .5-.22.5-.5v-5c0-.28-.22-.5-.5-.5h-1zM9 10.5c-.28 0-.5.22-.5.5v5c0 .28.22.5.5.5h1c.28 0 .5-.22.5-.5v-5c0-.28-.22-.5-.5-.5H9zM12 21c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z" />
+            </svg>
+            <span class="icon-label">Schach</span>
+        </div>
+    </div>
 
-  <!-- Debug overlay (hidden if unused) -->
-  <div id="debug-overlay" style="display:none"></div>
+    <!-- ========================================================================= -->
+    <!-- Haupt-Button zum Öffnen neuer Terminals -->
+    <!-- ========================================================================= -->
+    <button id="newTerminalBtn">[ + ]</button>
 
-  <!-- App script (all in one file for reliability) -->
-  <script>
-  /*************************************************************************
-   * Robust, self-contained frontend:
-   * - loads three.js from CDN if missing (we already loaded in head)
-   * - sets up 3D init and animate as safe functions
-   * - boot sequence -> show login (auto-check /api/me)
-   * - login/register via /api endpoints (credentials included)
-   * - debug overlay to show errors
-   *************************************************************************/
+    <!-- ========================================================================= -->
+    <!-- JAVASCRIPT FÜR LADEANIMATION, CHAT-LOGIK & MULTIPLE FENSTER -->
+    <!-- ========================================================================= -->
+    <script>
+        // === Globale DOM-Elementreferenzen ===
+        const loader = document.getElementById('loader');
+        const sphereContainer = document.getElementById('sphere-container');
+        const loadingText = document.getElementById('loading-text');
+        const loadingLog = document.getElementById('loading-log');
+        const progressBarContainer = document.getElementById('progress-bar-container');
+        const progressBar = document.getElementById('progress-bar-fill');
+        const accessGranted = document.getElementById('access-granted');
+        const newTerminalBtn = document.getElementById('newTerminalBtn');
+        const desktop = document.getElementById('desktop');
+        const consoleIcon = document.getElementById('console-icon');
+        const chessIcon = document.getElementById('chess-icon');
 
-  (function () {
-    // --------- Config ----------
-    const API_BASE = ''; // relative; when hosted on same origin (recommended)
-    const loadingLogEl = document.getElementById('loading-log');
-    const progressFill = document.getElementById('progress-bar-fill');
+        // === API-Konstanten und Chat-Status ===
+        const apiKey = "AIzaSyB-0z8e59quUM-EaRl0tGiK-5eVaSUq3dQ";
+        let highestZIndex = 2; // Start-Z-Index für Terminals
 
-    function log(msg) {
-      try {
-        const p = document.createElement('div');
-        p.textContent = '» ' + msg;
-        loadingLogEl.appendChild(p);
-        loadingLogEl.scrollTop = loadingLogEl.scrollHeight;
-      } catch (e) {
-        console.log('LOG ERR', e);
-      }
-    }
+        // =========================================================================
+        // THREE.JS SETUP FÜR 3D-LADEANIMATION
+        // =========================================================================
+        let scene, camera, renderer, particles, particleMaterial, stars;
+        let wireframeGlobe;
 
-    // --------- API helpers ----------
-    async function registerToServer(username, password) {
-      const res = await fetch(`${API_BASE}/api/register`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ username, password })
-      });
-      if (!res.ok) throw await res.json();
-      return await res.json();
-    }
-    async function loginToServer(username, password) {
-      const res = await fetch(`${API_BASE}/api/login`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ username, password })
-      });
-      if (!res.ok) throw await res.json();
-      return await res.json();
-    }
-    async function checkMe() {
-      try {
-        const res = await fetch(`${API_BASE}/api/me`, { credentials: 'include' });
-        if (!res.ok) return null;
-        return await res.json();
-      } catch (e) {
-        return null;
-      }
-    }
-    async function logoutFromServer() {
-      try { await fetch(`${API_BASE}/api/logout`, { method: 'POST', credentials: 'include' }); } catch(e){/*ignore*/ }
-    }
+        const particleInfo = [];
+        const chaosBounds = 10;
+        const sphereRadius = 2.0;
+        const particleCount = 3500;
 
-    // --------- Simple 3D animation (safe) ----------
-    // Expose init3D/animate3D on window so debug & external calls work
-    let scene, camera, renderer, particles = [], particleGeo, particleMat, animId;
-    const PARTICLE_COUNT = 1200;
-    function init3D() {
-      try {
-        // remove existing renderer if any
-        const existing = document.querySelector('#sphere-container canvas');
-        if (existing) existing.remove();
+        let animationPhase = 'chaos';
+        let clock, phaseStartTime, orbitStartTime;
 
-        // Basic three.js scene
-        scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
-        camera.position.z = 12;
+        /**
+         * Initialisiert die three.js-Szene und erstellt die 3D-Objekte.
+         */
+        function init3D() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 2000);
+            camera.position.z = 9.5;
 
-        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-        const container = document.getElementById('sphere-container');
-        container.appendChild(renderer.domElement);
+            renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            sphereContainer.appendChild(renderer.domElement);
 
-        // Particles group
-        particleGeo = new THREE.BufferGeometry();
-        const positions = new Float32Array(PARTICLE_COUNT * 3);
-        const colors = new Float32Array(PARTICLE_COUNT * 3);
-        const sizes = new Float32Array(PARTICLE_COUNT);
+            const globeGeometry = new THREE.IcosahedronGeometry(sphereRadius, 4);
+            const globeMaterial = new THREE.MeshBasicMaterial({
+                color: 0x00ff00,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.0
+            });
+            wireframeGlobe = new THREE.Mesh(globeGeometry, globeMaterial);
+            scene.add(wireframeGlobe);
 
-        for (let i=0;i<PARTICLE_COUNT;i++){
-          const phi = Math.acos(2*Math.random()-1);
-          const theta = 2*Math.PI*Math.random();
-          const r = 2.0 + Math.random()*4.2;
-          const x = r * Math.sin(phi)*Math.cos(theta);
-          const y = r * Math.sin(phi)*Math.sin(theta);
-          const z = r * Math.cos(phi);
-          positions[i*3] = x;
-          positions[i*3+1] = y;
-          positions[i*3+2] = z;
-          const c = 0.6 + Math.random()*0.4;
-          colors[i*3] = 0.0*c; colors[i*3+1] = 1.0*c; colors[i*3+2] = 0.6*c;
-          sizes[i] = 1 + Math.random()*2.2;
+            const positions = new Float32Array(particleCount * 3);
+            const tempSphere = new THREE.SphereGeometry(sphereRadius, 32, 32);
+            const surfaceVerts = tempSphere.attributes.position.array;
+
+            for (let i = 0; i < particleCount; i++) {
+                const x = (Math.random() - 0.5) * chaosBounds * 2;
+                const y = (Math.random() - 0.5) * chaosBounds * 2;
+                const z = (Math.random() - 0.5) * chaosBounds * 2;
+                positions[i * 3] = x; positions[i * 3 + 1] = y; positions[i * 3 + 2] = z;
+
+                const vi = Math.floor(Math.random() * (surfaceVerts.length / 3));
+                const target = new THREE.Vector3(
+                    surfaceVerts[vi * 3],
+                    surfaceVerts[vi * 3 + 1],
+                    surfaceVerts[vi * 3 + 2]
+                );
+
+                const innerScale = 0.28 + Math.random() * 0.32;
+                const innerTarget = target.clone().multiplyScalar(innerScale);
+
+                const velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.04,
+                    (Math.random() - 0.5) * 0.04,
+                    (Math.random() - 0.5) * 0.04
+                );
+
+                particleInfo.push({
+                    target,
+                    innerTarget,
+                    velocity,
+                    state: 'idle',
+                    stagingPoint: null
+                });
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particleMaterial = new THREE.PointsMaterial({color: 0x00ff00, size: 0.03, transparent: true, opacity: 0.9});
+            particles = new THREE.Points(geometry, particleMaterial);
+            scene.add(particles);
+
+            const starsGeo = new THREE.BufferGeometry();
+            const starPositions = [];
+            for (let i = 0; i < 3000; i++) {
+                starPositions.push((Math.random() - 0.5) * 2000, (Math.random() - 0.5) * 2000, (Math.random() - 0.5) * 2000);
+            }
+            starsGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPositions, 3));
+            const starsMat = new THREE.PointsMaterial({color: 0x00ff00, size: 1.5, transparent: true, opacity: 0.45});
+            stars = new THREE.Points(starsGeo, starsMat);
+            scene.add(stars);
+
+            clock = new THREE.Clock();
+            phaseStartTime = clock.getElapsedTime();
+
+            window.addEventListener('resize', onWindowResize);
         }
-        particleGeo.setAttribute('position', new THREE.BufferAttribute(positions,3));
-        particleGeo.setAttribute('color', new THREE.BufferAttribute(colors,3));
-        particleGeo.setAttribute('size', new THREE.BufferAttribute(sizes,1));
 
-        particleMat = new THREE.PointsMaterial({
-          size: 0.12,
-          vertexColors: true,
-          transparent: true,
-          opacity: 0.9,
-          depthWrite: false,
-          blending: THREE.AdditiveBlending
+        /**
+         * Animationsschleife für die 3D-Szene.
+         */
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            const dt = clock.getDelta();
+            const t = clock.getElapsedTime();
+
+            const positions = particles.geometry.attributes.position.array;
+
+            switch (animationPhase) {
+                case 'chaos':
+                    for (let i = 0; i < particleCount; i++) {
+                        positions[i * 3] += particleInfo[i].velocity.x;
+                        positions[i * 3 + 1] += particleInfo[i].velocity.y;
+                        positions[i * 3 + 2] += particleInfo[i].velocity.z;
+
+                        if (Math.abs(positions[i * 3]) > chaosBounds) particleInfo[i].velocity.x *= -1;
+                        if (Math.abs(positions[i * 3 + 1]) > chaosBounds) particleInfo[i].velocity.y *= -1;
+                        if (Math.abs(positions[i * 3 + 2]) > chaosBounds) particleInfo[i].velocity.z *= -1;
+                    }
+                    if (t - phaseStartTime > 2.8) {
+                        animationPhase = 'converging';
+                        phaseStartTime = t;
+                    }
+                    break;
+
+                case 'converging':
+                    let settledCount = 0;
+                    for (let i = 0; i < particleCount; i++) {
+                        const px = positions[i * 3], py = positions[i * 3 + 1], pz = positions[i * 3 + 2];
+                        const p = new THREE.Vector3(px, py, pz);
+                        const target = particleInfo[i].target;
+
+                        p.lerp(target, 0.045 + Math.random() * 0.01);
+                        positions[i * 3] = p.x; positions[i * 3 + 1] = p.y; positions[i * 3 + 2] = p.z;
+                        if (p.distanceTo(target) < 0.09) settledCount++;
+                    }
+                    const settledPerc = settledCount / particleCount;
+                    wireframeGlobe.material.opacity = Math.min(1, settledPerc * 1.6);
+                    if (settledPerc > 0.96 || (clock.getElapsedTime() - phaseStartTime > 7.5)) {
+                        prepareXInflow();
+                        animationPhase = 'xInflow';
+                        phaseStartTime = clock.getElapsedTime();
+                    }
+                    break;
+
+                case 'xInflow':
+                    let inflowSettled = 0;
+                    for (let i = 0; i < particleCount; i++) {
+                        const idx = i * 3;
+                        const p = new THREE.Vector3(positions[idx], positions[idx + 1], positions[idx + 2]);
+                        const info = particleInfo[i];
+                        const dist = p.length();
+                        if (!info.state || info.state === 'idle') {
+                            if (dist > sphereRadius + 0.06) {
+                                info.state = 'toStaging';
+                                info.stagingPoint = computeStagingPoint(p);
+                            } else {
+                                info.state = 'toInner';
+                            }
+                        }
+                        if (info.state === 'toStaging') {
+                            const sp = info.stagingPoint;
+                            p.lerp(sp, 0.10 + Math.random() * 0.03);
+                            positions[idx] = p.x; positions[idx + 1] = p.y; positions[idx + 2] = p.z;
+                            if (p.distanceTo(sp) < 0.12) {
+                                info.state = 'toInner';
+                            }
+                        } else if (info.state === 'toInner') {
+                            const inner = info.innerTarget;
+                            const toInner = inner.clone().sub(p);
+                            const swirl = new THREE.Vector3(-toInner.y, toInner.x, toInner.z * 0.08).multiplyScalar(0.004 + (i % 7) * 0.0002);
+                            p.add(swirl);
+                            p.lerp(inner, 0.038 + Math.random() * 0.012);
+                            positions[idx] = p.x; positions[idx + 1] = p.y; positions[idx + 2] = p.z;
+                            if (p.distanceTo(inner) < 0.055) {
+                                info.state = 'settled';
+                            }
+                        } else if (info.state === 'settled') {
+                            inflowSettled++;
+                        }
+                    }
+                    wireframeGlobe.material.opacity = Math.max(0.18, 1.0 - inflowSettled / particleCount * 0.9);
+                    if (inflowSettled / particleCount > 0.98 || (clock.getElapsedTime() - phaseStartTime > 12.0)) {
+                        animationPhase = 'orbit';
+                        orbitStartTime = clock.getElapsedTime();
+                        phaseStartTime = clock.getElapsedTime();
+                    }
+                    break;
+
+                case 'orbit':
+                    const elapsedOrbit = (clock.getElapsedTime() - orbitStartTime);
+                    let doneCount = 0;
+                    for (let i = 0; i < particleCount; i++) {
+                        const idx = i * 3;
+                        const p = new THREE.Vector3(positions[idx], positions[idx + 1], positions[idx + 2]);
+                        const baseAngle = (i / particleCount) * Math.PI * 2;
+                        const angle = baseAngle + elapsedOrbit * 0.6 + (i % 137) * 0.003;
+                        const orbitRadius = sphereRadius * (1.6 + 0.6 * Math.sin(elapsedOrbit * 0.9 + i * 0.017));
+                        const ox = Math.cos(angle) * orbitRadius;
+                        const oz = Math.sin(angle) * orbitRadius;
+                        const oy = Math.sin(angle * 2 + i * 0.01) * 0.55;
+                        const orbitTarget = new THREE.Vector3(ox, oy, oz);
+                        p.lerp(orbitTarget, 0.06 + (i % 11) * 0.0014);
+                        positions[idx] = p.x; positions[idx + 1] = p.y; positions[idx + 2] = p.z;
+                        if (p.length() > sphereRadius * 1.55) doneCount++;
+                    }
+                    wireframeGlobe.material.opacity = 0.95;
+                    if (doneCount / particleCount > 0.98) {
+                        // Finale Phase erreicht, bleibt in diesem Zustand
+                    }
+                    break;
+            }
+
+            wireframeGlobe.rotation.y += 0.0025;
+            if (stars) stars.rotation.y += 0.0001;
+
+            particles.geometry.attributes.position.needsUpdate = true;
+            renderer.render(scene, camera);
+        }
+
+        /**
+         * Bereitet Partikel auf die X-Inflow-Phase vor.
+         */
+        function prepareXInflow() {
+            for (let i = 0; i < particleCount; i++) {
+                const idx = i * 3;
+                const pos = new THREE.Vector3(
+                    particles.geometry.attributes.position.array[idx],
+                    particles.geometry.attributes.position.array[idx + 1],
+                    particles.geometry.attributes.position.array[idx + 2]
+                );
+                const dist = pos.length();
+                if (dist > sphereRadius + 0.06) {
+                    particleInfo[i].state = 'toStaging';
+                    particleInfo[i].stagingPoint = computeStagingPoint(pos);
+                } else {
+                    particleInfo[i].state = 'toInner';
+                    particleInfo[i].stagingPoint = null;
+                }
+            }
+        }
+
+        /**
+         * Berechnet den Staging-Punkt für die X-Inflow-Animation.
+         */
+        function computeStagingPoint(currentPos) {
+            const diags = [
+                new THREE.Vector3(1, 1, 0).normalize(),
+                new THREE.Vector3(-1, 1, 0).normalize(),
+                new THREE.Vector3(1, -1, 0).normalize(),
+                new THREE.Vector3(-1, -1, 0).normalize()
+            ];
+            const proj = new THREE.Vector3(currentPos.x, currentPos.y, 0);
+            let bestIdx = 0;
+            let bestDot = -Infinity;
+            const projNorm = proj.length() > 0.0001 ? proj.clone().normalize() : new THREE.Vector3(1, 1, 0).normalize();
+            for (let j = 0; j < diags.length; j++) {
+                const d = diags[j];
+                const dot = projNorm.dot(d);
+                if (dot > bestDot) {bestDot = dot; bestIdx = j;}
+            }
+            const dist = sphereRadius * (1.25 + Math.random() * 0.45);
+            const base = diags[bestIdx].clone().multiplyScalar(dist);
+            const zVar = (currentPos.z * 0.18) + (Math.random() - 0.5) * 0.35;
+            base.z = zVar;
+            return base;
+        }
+
+        function onWindowResize() {
+            const w = window.innerWidth, h = window.innerHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+        }
+
+        // =========================================================================
+        // CHAT-LOGIK
+        // =========================================================================
+        function displayMessage(messagesDiv, message, sender) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('log-entry');
+            if (sender === 'user') {
+                const userLine = document.createElement('span');
+                userLine.classList.add('user-input-line');
+                userLine.textContent = `> ${message}`;
+                messageElement.appendChild(userLine);
+            } else {
+                messageElement.innerHTML = `> ${message.replace(/\n/g, '<br>')}`;
+            }
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        async function getGeminiResponse(userPrompt) {
+            if (!apiKey) {
+                console.error("API-Schlüssel fehlt.");
+                return "Entschuldigung, es gab einen Konfigurationsfehler.";
+            }
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{role: 'user', parts: [{text: userPrompt}]}],
+                tools: [{"google_search": {}}],
+                systemInstruction: {parts: [{text: "Du bist ein KI-Assistent von Google. Antworte hilfreich und freundlich auf Deutsch. Formatiere Antworten mit Markdown."}]}
+            };
+            try {
+                const response = await fetch(apiUrl, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)});
+                if (!response.ok) throw new Error(`API-Fehler: ${response.status}`);
+                const result = await response.json();
+                return result?.candidates?.[0]?.content?.parts?.[0]?.text || "Keine Antwort erhalten.";
+            } catch (error) {
+                console.error("Fehler beim API-Aufruf:", error);
+                return "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.";
+            }
+        }
+
+        async function sendMessage(terminalId) {
+            const terminal = document.getElementById(terminalId);
+            const userInput = terminal.querySelector('.terminal-input');
+            const messagesDiv = terminal.querySelector('.terminal-output');
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            displayMessage(messagesDiv, message, 'user');
+            userInput.disabled = true;
+            userInput.value = '';
+
+            try {
+                const botResponse = await getGeminiResponse(message);
+                displayMessage(messagesDiv, botResponse, 'bot');
+            } catch (error) {
+                console.error("Fehler beim Senden der Nachricht:", error);
+                displayMessage(messagesDiv, "Ein Fehler ist aufgetreten.", 'bot');
+            } finally {
+                userInput.disabled = false;
+                userInput.focus();
+            }
+        }
+
+        // =========================================================================
+        // MEHRFACHTERMINAL-LOGIK
+        // =========================================================================
+        let windowCounter = 0;
+
+        /**
+         * Erstellt ein neues Fenster.
+         */
+        function createWindow(title, contentHTML, initialSize = {width: '700px', height: '500px'}) {
+            windowCounter++;
+            const windowId = `window-${windowCounter}`;
+
+            const newWindow = document.createElement('div');
+            newWindow.id = windowId;
+            newWindow.className = 'terminal-window';
+            newWindow.style.zIndex = ++highestZIndex;
+            newWindow.style.width = initialSize.width;
+            newWindow.style.height = initialSize.height;
+
+            const offsetX = 50 + (windowCounter * 20);
+            const offsetY = 50 + (windowCounter * 20);
+            newWindow.style.left = `${offsetX}px`;
+            newWindow.style.top = `${offsetY}px`;
+
+            newWindow.innerHTML = `
+                <div class="terminal-header">
+                    <h2>${title} ${windowCounter}</h2>
+                    <button class="close-btn">[ x ]</button>
+                </div>
+                ${contentHTML}
+            `;
+            document.body.appendChild(newWindow);
+
+            const header = newWindow.querySelector('.terminal-header');
+            const closeBtn = newWindow.querySelector('.close-btn');
+
+            newWindow.addEventListener('mousedown', () => {
+                newWindow.style.zIndex = ++highestZIndex;
+            });
+
+            let isDragging = false;
+            let offsetX_drag, offsetY_drag;
+
+            header.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                offsetX_drag = e.clientX - newWindow.offsetLeft;
+                offsetY_drag = e.clientY - newWindow.offsetTop;
+                newWindow.style.cursor = 'grabbing';
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const newX = e.clientX - offsetX_drag;
+                    const newY = e.clientY - offsetY_drag;
+                    newWindow.style.left = `${newX}px`;
+                    newWindow.style.top = `${newY}px`;
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    newWindow.style.cursor = 'grab';
+                }
+            });
+
+            closeBtn.addEventListener('click', () => {
+                newWindow.remove();
+            });
+
+            return newWindow;
+        }
+
+        /**
+         * Erstellt ein neues Terminal-Fenster.
+         */
+        function createTerminalWindow() {
+            const terminalContent = `
+                <div class="terminal-output">
+                    <div class="log-entry">> Initialisiere Schnittstelle... [OK]</div>
+                    <div class="log-entry">> Lade Module... [OK]</div>
+                </div>
+                <div class="terminal-input-container">
+                    <span class="prompt-symbol">></span>
+                    <input type="text" class="terminal-input" placeholder="Geben Sie Ihren Befehl ein..." autofocus>
+                    <button class="sendBtn">Senden</button>
+                </div>
+            `;
+            const terminalWindow = createWindow('TERMINAL', terminalContent);
+            const userInput = terminalWindow.querySelector('.terminal-input');
+            const sendBtn = terminalWindow.querySelector('.sendBtn');
+
+            sendBtn.addEventListener('click', () => {
+                sendMessage(terminalWindow.id);
+            });
+            userInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage(terminalWindow.id);
+                }
+            });
+
+            userInput.focus();
+        }
+
+        // =========================================================================
+        // SCHACH-LOGIK MIT BOT
+        // =========================================================================
+        function createChessWindow() {
+            const chessContent = `
+                <div id="thinking-indicator">Bot denkt nach...</div>
+                <div class="chess-board-container">
+                    <div class="chess-topbar">
+                        <div id="chess-status" class="chess-status">Weiß am Zug</div>
+
+                        <!-- Schwierigkeit / Depth -->
+                        <div class="chess-controls-right">
+                            <label for="difficulty-select" class="difficulty-label">Schwierigkeit:</label>
+                            <select id="difficulty-select" title="Suchtiefe">
+                                <option value="1">Sehr leicht (1)</option>
+                                <option value="2">Leicht (2)</option>
+                                <option value="3">Mittel (3)</option>
+                                <option value="4" selected>Schwer (4)</option>
+                                <option value="5">Pro (5)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="chess-board"></div>
+
+                    <div class="chess-control">
+                        <button id="new-game-btn">[ ♻ Neues Spiel ]</button>
+                    </div>
+                </div>
+
+                <!-- Promotion Modal (versteckt, wird bei Bauer-Promotion sichtbar) -->
+                <div id="promotion-modal" class="promotion-modal hidden" aria-hidden="true">
+                    <div class="promotion-box">
+                        <div class="promotion-title">Bauernumwandlung — Wähle ein Stück</div>
+                        <div class="promotion-options">
+                            <button class="promote-btn" data-piece="Q">♕ Dame</button>
+                            <button class="promote-btn" data-piece="R">♖ Turm</button>
+                            <button class="promote-btn" data-piece="B">♗ Läufer</button>
+                            <button class="promote-btn" data-piece="N">♘ Springer</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const chessWindow = createWindow('Schach', chessContent, {width: 'auto', height: 'auto'});
+            chessWindow.classList.add('chess-window');
+
+            // Fenstergröße an Inhalt anpassen
+            chessWindow.style.resize = 'none';
+            chessWindow.style.left = "50%";
+            chessWindow.style.top = "50%";
+            chessWindow.style.transform = "translate(-50%, -50%)";
+
+            const boardDiv = chessWindow.querySelector('.chess-board');
+            const statusDiv = chessWindow.querySelector('#chess-status');
+            const newGameBtn = chessWindow.querySelector('#new-game-btn');
+            const difficultySelect = chessWindow.querySelector('#difficulty-select');
+            difficultySelect.addEventListener('change', () => {
+                botDepth = parseInt(difficultySelect.value, 10);
+                console.log("Neue Bot-Suchtiefe:", botDepth);
+            });
+
+            const thinkingIndicator = chessWindow.querySelector('#thinking-indicator');
+
+            const pieceEmojis = {
+                'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙',
+                'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟'
+            };
+            const pieceValues = {
+                'p': 10, 'n': 30, 'b': 30, 'r': 50, 'q': 90, 'k': 900,
+                'P': -10, 'N': -30, 'B': -30, 'R': -50, 'Q': -90, 'K': -900
+            };
+
+            function evaluateBoard(boardState) {
+                let score = 0;
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        const piece = boardState[r][c];
+                        if (piece) {
+                            score += pieceValues[piece] || 0;
+                        }
+                    }
+                }
+                return score;
+            }
+            // --- zusätzliche DOM-Elemente (neu) ---
+            const promotionModal = chessWindow.querySelector('#promotion-modal');
+            const promotionOptions = chessWindow.querySelectorAll('.promote-btn');
+
+            // --- Spiel-Zustandvariablen ---
+            let promotionInProgress = false; // schützt vor mehrfachen Calls
+            let pendingPromotion = null;   // {row, col, color}
+            let searchDepth = parseInt(difficultySelect ? difficultySelect.value : 4, 10) || 4;
+
+            // Difficulty Listener
+            if (difficultySelect) {
+                difficultySelect.addEventListener('change', (e) => {
+                    const v = parseInt(e.target.value, 10);
+                    if (!isNaN(v)) searchDepth = v;
+                    console.log("Schwierigkeit gesetzt auf", searchDepth);
+                });
+            }
+
+            // Promotion option defensive listener (falls modal buttons direkt geklickt werden)
+            promotionOptions.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (pendingPromotion) finalizePromotion(btn.dataset.piece);
+                });
+            });
+
+            function debugBoardMapping() {
+                console.log("------ DEBUG: board array (row 0..7), turn =", turn, "------");
+                for (let r = 0; r < 8; r++) {
+                    console.log(r + ": " + board[r].map(p => (p ? p : '.')).join(' '));
+                }
+                console.log("DOM squares sample (top-left few):");
+                // sample first 8 DOM squares
+                const squares = boardDiv.querySelectorAll('.square');
+                let sample = [];
+                for (let i = 0; i < Math.min(8, squares.length); i++) {
+                    sample.push(`[${squares[i].dataset.row},${squares[i].dataset.col}]`);
+                }
+                console.log(sample.join(' | '));
+            }
+
+
+            let board;
+            let turn; // 'white' oder 'black'
+            let selectedSquare = null;
+            // Castling / moved-flags
+            let whiteKingMoved = false, blackKingMoved = false;
+            let whiteRookA_Moved = false, whiteRookH_Moved = false; // a1 / h1
+            let blackRookA_Moved = false, blackRookH_Moved = false; // a8 / h8
+
+            let lastMove = null; // { fromRow, fromCol, toRow, toCol }
+            const botColor = 'black';
+            let botDepth = 4; // Standard-Suchtiefe (Schwer)
+
+
+            function initializeBoard() {
+                board = [
+                    ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'], // Schwarz oben
+                    ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+                    ['', '', '', '', '', '', '', ''],
+                    ['', '', '', '', '', '', '', ''],
+                    ['', '', '', '', '', '', '', ''],
+                    ['', '', '', '', '', '', '', ''],
+                    ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+                    ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']  // Weiß unten
+                ];
+
+                // Wichtig: Weiß ist am Zug
+                turn = 'white';
+                renderBoard();
+                updateStatus();
+                whiteKingMoved = false;
+                blackKingMoved = false;
+                whiteRookA_Moved = false;
+                whiteRookH_Moved = false;
+                blackRookA_Moved = false;
+                blackRookH_Moved = false;
+                lastMove = null;
+
+            }
+
+            function showPromotionModal(color) {
+                if (!promotionModal) {
+                    console.warn('Kein promotionModal im DOM gefunden, default -> Dame');
+                    // fallback: falls Modal fehlt, direkt zur Dame promoten
+                    finalizePromotion('Q');
+                    return;
+                }
+
+                // Verhindere Doppel-Öffnungen
+                if (promotionInProgress) return;
+                promotionInProgress = true;
+
+                // Debug
+                console.log('showPromotionModal, pendingPromotion =', pendingPromotion);
+
+                promotionModal.classList.remove('hidden');
+                promotionModal.setAttribute('aria-hidden', 'false');
+
+                // Hole Buttons frisch (kann sinnvoll sein, falls DOM sich geändert hat)
+                const opts = promotionModal.querySelectorAll('.promote-btn');
+
+                // Füge einmalige Listener (once: true)
+                opts.forEach(btn => {
+                    const handler = () => {
+                        if (!promotionInProgress) return;
+                        promotionInProgress = false;
+                        promotionModal.classList.add('hidden');
+                        promotionModal.setAttribute('aria-hidden', 'true');
+                        const choice = btn.dataset.piece;
+                        console.log('Promotion gewählt:', choice, 'für', pendingPromotion);
+                        finalizePromotion(choice);
+                    };
+                    btn.addEventListener('click', handler, { once: true });
+                });
+            }
+
+            function finalizePromotion(choice) {
+                if (!pendingPromotion) {
+                    console.warn('finalizePromotion aufgerufen, aber pendingPromotion ist null');
+                    return;
+                }
+                const { row, col, color } = pendingPromotion;
+                // choice ist z.B. 'Q','R','B','N' für Weiß
+                // Wenn color === 'white' setzen wir Großbuchstaben, für Schwarz setzen wir kleingeschriebene
+                if (color === 'white') {
+                    board[row][col] = choice;
+                } else {
+                    board[row][col] = choice.toLowerCase();
+                }
+
+                // Reset pending
+                pendingPromotion = null;
+
+                // Update UI + Status und Bot-Zug
+                renderBoard();
+                updateStatus();
+
+                // Bot dran
+                turn = (color === 'white') ? 'black' : 'white';
+                setTimeout(makeBotMove, 500);
+            }
+
+
+
+            function updateStatus() {
+                let statusText;
+                if (turn === 'white') {
+                    statusText = 'Weiß am Zug';
+                } else {
+                    statusText = 'Schwarz (Bot) am Zug';
+                }
+
+                if (isCheckmate(board, 'white')) {
+                    statusText = "Schachmatt! Schwarz gewinnt!";
+                } else if (isCheckmate(board, 'black')) {
+                    statusText = "Schachmatt! Weiß gewinnt!";
+                } else if (isStalemate(board, turn)) {
+                    statusText = "Patt! Unentschieden.";
+                } else if (isKingInCheck(board, turn)) {
+                    statusText += " (im Schach)";
+                }
+                statusText += ` | Schwierigkeit: ${botDepth}`;
+                statusDiv.textContent = statusText;
+            }
+
+            function renderBoard() {
+                boardDiv.innerHTML = '';
+
+                // sicherstellen, dass das grid korrekt ist
+                boardDiv.style.display = 'grid';
+                boardDiv.style.gridTemplateColumns = 'repeat(8, 1fr)';
+                boardDiv.style.gridTemplateRows = 'repeat(8, 1fr)';
+
+                // Mapping: displayRow 0 = ganz oben. boardRow = 7 - displayRow
+                for (let displayRow = 0; displayRow < 8; displayRow++) {
+                    for (let col = 0; col < 8; col++) {
+                        const boardRow = 7 - displayRow; // sorgt dafür, dass board[7] unten ist (Weiß unten)
+                        const square = document.createElement('div');
+
+                        // farbe des feldes basierend auf boardRow/col
+                        const isLight = (boardRow + col) % 2 === 0;
+                        square.className = 'square ' + (isLight ? 'light' : 'dark');
+
+                        // logische Koordinaten (1:1 mit board[][])
+                        square.dataset.row = boardRow;
+                        square.dataset.col = col;
+
+                        // explizite Grid-Position (verhindert Append-Reihenfolge-Probleme)
+                        square.style.gridRowStart = (displayRow + 1).toString();
+                        square.style.gridColumnStart = (col + 1).toString();
+
+                        // Figur einsetzen (falls vorhanden)
+                        const piece = board[boardRow][col];
+                        if (piece) {
+                            const pieceSpan = document.createElement('span');
+                            pieceSpan.classList.add('chess-piece');
+                            if (isWhite(piece)) pieceSpan.classList.add('white-piece'); else pieceSpan.classList.add('black-piece');
+                            pieceSpan.textContent = pieceEmojis[piece];
+                            square.appendChild(pieceSpan);
+                        }
+
+                        square.addEventListener('click', handleSquareClick);
+                        boardDiv.appendChild(square);
+                    }
+                }
+
+                // optional: markiere letzten Zug, falls lastMove gesetzt (du hattest schon last-move Klassen)
+                if (typeof lastMove !== 'undefined' && lastMove) {
+                    const from = boardDiv.querySelector(`[data-row="${lastMove.fromRow}"][data-col="${lastMove.fromCol}"]`);
+                    const to   = boardDiv.querySelector(`[data-row="${lastMove.toRow}"][data-col="${lastMove.toCol}"]`);
+                    if (from) from.classList.add('last-move-from', 'last-move-animate');
+                    if (to)   to.classList.add('last-move-to', 'last-move-animate');
+                    // entferne Animation nach kurzer Zeit
+                    setTimeout(() => {
+                        document.querySelectorAll('.last-move-animate').forEach(el => el.classList.remove('last-move-animate'));
+                    }, 1100);
+                }
+            }
+
+            function isWhite(piece) {return piece && piece === piece.toUpperCase();}
+            function isBlack(piece) {return piece && piece === piece.toLowerCase();}
+            function isSameColor(piece1, piece2) {return (isWhite(piece1) && isWhite(piece2)) || (isBlack(piece1) && isBlack(piece2));}
+
+            // === NEU: sichere Move-Anwendung (verschiebt auch Turm bei Rochade, behandelt Umwandlung) ===
+            function applyMove(boardState, fromRow, fromCol, toRow, toCol) {
+                // Hol die Figur zuerst
+                const piece = boardState[fromRow][fromCol];
+                if (!piece) return false;
+
+                // Ziehe die Figur (erst jetzt das Board ändern)
+                boardState[toRow][toCol] = piece;
+                boardState[fromRow][fromCol] = '';
+
+                // lastMove nur für das echte Board aktualisieren (nicht für Minimax-Simulationen)
+                if (boardState === board) {
+                    lastMove = { fromRow, fromCol, toRow, toCol };
+                }
+
+                // Rochade: König zieht 2 Felder -> Turm mitverschieben
+                if (piece.toLowerCase() === 'k' && Math.abs(toCol - fromCol) === 2) {
+                    const rank = fromRow; // König bleibt auf gleicher Reihe
+                    if (toCol === 6) { // kurze Rochade (g)
+                        // Turm h -> f
+                        boardState[rank][5] = boardState[rank][7];
+                        boardState[rank][7] = '';
+                        if (boardState === board) {
+                            if (piece === 'K') whiteRookH_Moved = true;
+                            if (piece === 'k') blackRookH_Moved = true;
+                        }
+                    } else if (toCol === 2) { // lange Rochade (c)
+                        // Turm a -> d
+                        boardState[rank][3] = boardState[rank][0];
+                        boardState[rank][0] = '';
+                        if (boardState === board) {
+                            if (piece === 'K') whiteRookA_Moved = true;
+                            if (piece === 'k') blackRookA_Moved = true;
+                        }
+                    }
+                }
+
+                // --- Flags für König/Turm setzen (nur echtes Board) ---
+                if (boardState === board) {
+                    if (piece === 'K') whiteKingMoved = true;
+                    if (piece === 'k') blackKingMoved = true;
+
+                    if (piece === 'R') {
+                        if (fromRow === 7 && fromCol === 0) whiteRookA_Moved = true;
+                        if (fromRow === 7 && fromCol === 7) whiteRookH_Moved = true;
+                    }
+                    if (piece === 'r') {
+                        if (fromRow === 0 && fromCol === 0) blackRookA_Moved = true;
+                        if (fromRow === 0 && fromCol === 7) blackRookH_Moved = true;
+                    }
+                }
+
+                // Promotion prüfen (nur wenn das gezogene Stück ein Bauer ist)
+                if (piece.toLowerCase() === 'p') {
+                    const isWhitePawn = (piece === 'P');
+                    // Weiß erreicht row 0, Schwarz row 7
+                    if (isWhitePawn && toRow === 0) {
+                        // Echtes Spiel -> Modal zeigen (wir ändern die Figur erst nach Auswahl)
+                        if (boardState === board) {
+                            pendingPromotion = { row: toRow, col: toCol, color: 'white' };
+                            console.log('pendingPromotion gesetzt:', pendingPromotion);
+                        } else {
+                            // Simulation (Minimax): automatisch Dame
+                            boardState[toRow][toCol] = 'Q';
+                        }
+                    } else if (!isWhitePawn && toRow === 7) {
+                        // Black pawn promotion -> auto-queen
+                        boardState[toRow][toCol] = 'q';
+                    }
+                }
+
+                return true;
+            }
+
+            // Ermittelt alle gültigen Züge für eine Figur an einer bestimmten Position
+            function isSquareAttacked(boardState, targetRow, targetCol, byColor) {
+                // byColor = 'white' or 'black' -> prüfen, ob irgendeine Figur dieser Farbe das Feld angreift.
+                const dirStraight = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+                const dirDiag = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+                const knightMoves = [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2], [-1, 2], [-1, -2]];
+
+                // Pawns: je nach Farbe andere Angriffsrichtung
+                const pawnDir = (byColor === 'white') ? -1 : 1;
+
+                // Pawns
+                const pr1 = targetRow + pawnDir;
+                if (pr1 >= 0 && pr1 < 8) {
+                    if (targetCol - 1 >= 0) {
+                        const p = boardState[pr1][targetCol - 1];
+                        if (p && ((byColor === 'white' && p === 'P') || (byColor === 'black' && p === 'p'))) return true;
+                    }
+                    if (targetCol + 1 <= 7) {
+                        const p = boardState[pr1][targetCol + 1];
+                        if (p && ((byColor === 'white' && p === 'P') || (byColor === 'black' && p === 'p'))) return true;
+                    }
+                }
+
+                // Knights
+                for (const m of knightMoves) {
+                    const r = targetRow + m[0], c = targetCol + m[1];
+                    if (r >= 0 && r < 8 && c >= 0 && c < 8) {
+                        const p = boardState[r][c];
+                        if (p && ((byColor === 'white' && p === 'N') || (byColor === 'black' && p === 'n'))) return true;
+                    }
+                }
+
+                // Rooks & Queens (straight)
+                for (const d of dirStraight) {
+                    let r = targetRow + d[0], c = targetCol + d[1];
+                    while (r >= 0 && r < 8 && c >= 0 && c < 8) {
+                        const p = boardState[r][c];
+                        if (p) {
+                            if (byColor === 'white') {
+                                if (p === 'R' || p === 'Q') return true;
+                            } else {
+                                if (p === 'r' || p === 'q') return true;
+                            }
+                            break;
+                        }
+                        r += d[0]; c += d[1];
+                    }
+                }
+
+                // Bishops & Queens (diagonal)
+                for (const d of dirDiag) {
+                    let r = targetRow + d[0], c = targetCol + d[1];
+                    while (r >= 0 && r < 8 && c >= 0 && c < 8) {
+                        const p = boardState[r][c];
+                        if (p) {
+                            if (byColor === 'white') {
+                                if (p === 'B' || p === 'Q') return true;
+                            } else {
+                                if (p === 'b' || p === 'q') return true;
+                            }
+                            break;
+                        }
+                        r += d[0]; c += d[1];
+                    }
+                }
+
+                // King (adjacent)
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let dc = -1; dc <= 1; dc++) {
+                        if (dr === 0 && dc === 0) continue;
+                        const r = targetRow + dr, c = targetCol + dc;
+                        if (r >= 0 && r < 8 && c >= 0 && c < 8) {
+                            const p = boardState[r][c];
+                            if (p && ((byColor === 'white' && p === 'K') || (byColor === 'black' && p === 'k'))) return true;
+                        }
+                    }
+                }
+
+                return false;
+            }
+
+            function getValidMoves(boardState, row, col)  {
+                const piece = boardState[row][col];
+                if (!piece) return [];
+                const moves = [];
+
+                const pieceType = piece.toLowerCase();
+                const isWhitePiece = isWhite(piece);
+
+                function inBounds(r, c) {return r >= 0 && r < 8 && c >= 0 && c < 8;}
+
+                function checkDirection(dRow, dCol) {
+                    let r = row + dRow, c = col + dCol;
+                    while (inBounds(r, c)) {
+                        if (boardState[r][c] && isSameColor(piece, boardState[r][c])) break;
+                        moves.push([r, c]);
+                        if (boardState[r][c]) break;
+                        r += dRow;
+                        c += dCol;
+                    }
+                }
+
+                switch (pieceType) {
+                    case 'p': { // Bauer
+                        const direction = isWhitePiece ? -1 : 1;
+                        const oneR = row + direction;
+                        if (inBounds(oneR, col) && !boardState[oneR][col]) {
+                            moves.push([oneR, col]);
+                            const startRow = isWhitePiece ? 6 : 1;
+                            const twoR = row + 2 * direction;
+                            if (row === startRow && inBounds(twoR, col) && !boardState[twoR][col]) {
+                                moves.push([twoR, col]);
+                            }
+                        }
+                        // captures
+                        const capLr = row + direction, capLc = col - 1;
+                        if (inBounds(capLr, capLc) && boardState[capLr][capLc] && !isSameColor(piece, boardState[capLr][capLc])) moves.push([capLr, capLc]);
+                        const capRr = row + direction, capRc = col + 1;
+                        if (inBounds(capRr, capRc) && boardState[capRr][capRc] && !isSameColor(piece, boardState[capRr][capRc])) moves.push([capRr, capRc]);
+                        break;
+                    }
+                    case 'r':
+                        checkDirection(1, 0); checkDirection(-1, 0); checkDirection(0, 1); checkDirection(0, -1);
+                        break;
+                    case 'n': {
+                        const knightMoves = [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2], [-1, 2], [-1, -2]];
+                        knightMoves.forEach(move => {
+                            const newRow = row + move[0], newCol = col + move[1];
+                            if (inBounds(newRow, newCol) && !isSameColor(piece, boardState[newRow][newCol])) moves.push([newRow, newCol]);
+                        });
+                        break;
+                    }
+                    case 'b':
+                        checkDirection(1, 1); checkDirection(1, -1); checkDirection(-1, 1); checkDirection(-1, -1);
+                        break;
+                    case 'q':
+                        checkDirection(1, 0); checkDirection(-1, 0); checkDirection(0, 1); checkDirection(0, -1);
+                        checkDirection(1, 1); checkDirection(1, -1); checkDirection(-1, 1); checkDirection(-1, -1);
+                        break;
+                    case 'k': {
+                        const kingMoves = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+                        kingMoves.forEach(move => {
+                            const newRow = row + move[0], newCol = col + move[1];
+                            if (inBounds(newRow, newCol) && !isSameColor(piece, boardState[newRow][newCol])) {
+                                moves.push([newRow, newCol]);
+                            }
+                        });
+
+                        // --- Castling (strenger prüfen) ---
+                        // nur wenn König nicht im Schach und Startposition korrekt
+                        const color = isWhitePiece ? 'white' : 'black';
+                        if (!isKingInCheck(boardState, color)) {
+                            const rank = isWhitePiece ? 7 : 0;
+                            const kingStartCol = 4;
+                            if (row === rank && col === kingStartCol) {
+                                if (isWhitePiece) {
+                                    // kurze Rochade (h1)
+                                    if (!whiteKingMoved && !whiteRookH_Moved) {
+                                        if (!boardState[rank][5] && !boardState[rank][6]) {
+                                            // Felder f1 (5) und g1 (6) dürfen nicht angegriffen sein, und e1 nicht (wir prüften oben)
+                                            if (!isSquareAttacked(boardState, rank, 5, 'black') && !isSquareAttacked(boardState, rank, 6, 'black')) {
+                                                moves.push([rank, 6]);
+                                            }
+                                        }
+                                    }
+                                    // lange Rochade (a1)
+                                    if (!whiteKingMoved && !whiteRookA_Moved) {
+                                        if (!boardState[rank][3] && !boardState[rank][2] && !boardState[rank][1]) {
+                                            if (!isSquareAttacked(boardState, rank, 3, 'black') && !isSquareAttacked(boardState, rank, 2, 'black')) {
+                                                moves.push([rank, 2]);
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    // Schwarz
+                                    if (!blackKingMoved && !blackRookH_Moved) {
+                                        if (!boardState[rank][5] && !boardState[rank][6]) {
+                                            if (!isSquareAttacked(boardState, rank, 5, 'white') && !isSquareAttacked(boardState, rank, 6, 'white')) {
+                                                moves.push([rank, 6]);
+                                            }
+                                        }
+                                    }
+                                    if (!blackKingMoved && !blackRookA_Moved) {
+                                        if (!boardState[rank][3] && !boardState[rank][2] && !boardState[rank][1]) {
+                                            if (!isSquareAttacked(boardState, rank, 3, 'white') && !isSquareAttacked(boardState, rank, 2, 'white')) {
+                                                moves.push([rank, 2]);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+
+                // Filtere Züge, die den König ins Schach bringen
+                return moves.filter(move => {
+                    const [toRow, toCol] = move;
+                    const originalPiece = boardState[toRow][toCol];
+                    const tempBoard = JSON.parse(JSON.stringify(boardState));
+                    tempBoard[toRow][toCol] = tempBoard[row][col];
+                    tempBoard[row][col] = '';
+                    const isLegal = !isKingInCheck(tempBoard, isWhitePiece ? 'white' : 'black');
+                    return isLegal;
+                });
+            }
+
+
+            function isKingInCheck(boardState, color) {
+                let kingPos = null;
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        const piece = boardState[r][c];
+                        if (piece && (color === 'white' ? piece === 'K' : piece === 'k')) {
+                            kingPos = [r, c];
+                            break;
+                        }
+                    }
+                    if (kingPos) break;
+                }
+                if (!kingPos) return false;
+
+                const opponentColor = color === 'white' ? 'black' : 'white';
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        const piece = boardState[r][c];
+                        if (piece && ((opponentColor === 'white' && isWhite(piece)) || (opponentColor === 'black' && isBlack(piece)))) {
+                            const validMoves = getMovesWithoutCheckFilter(boardState, r, c);
+                            if (validMoves.some(move => move[0] === kingPos[0] && move[1] === kingPos[1])) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+                return false;
+            }
+
+            function isCheckmate(boardState, color) {
+                if (!isKingInCheck(boardState, color)) return false;
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        const piece = boardState[r][c];
+                        if (piece && (color === 'white' ? isWhite(piece) : isBlack(piece))) {
+                            if (getValidMoves(boardState, r, c).length > 0) return false;
+                        }
+                    }
+                }
+                return true;
+            }
+
+            function isStalemate(boardState, color) {
+                if (isKingInCheck(boardState, color)) return false;
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        const piece = boardState[r][c];
+                        if (piece && (color === 'white' ? isWhite(piece) : isBlack(piece))) {
+                            if (getValidMoves(boardState, r, c).length > 0) return false;
+                        }
+                    }
+                }
+                return true;
+            }
+
+            function getMovesWithoutCheckFilter(boardState, row, col) {
+                const piece = boardState[row][col];
+                if (!piece) return [];
+                const moves = [];
+
+                const pieceType = piece.toLowerCase();
+                const isWhitePiece = isWhite(piece);
+
+                function checkDirection(dRow, dCol) {
+                    let r = row + dRow, c = col + dCol;
+                    while (r >= 0 && r < 8 && c >= 0 && c < 8) {
+                        if (boardState[r][c] && isSameColor(piece, boardState[r][c])) break;
+                        moves.push([r, c]);
+                        if (boardState[r][c]) break;
+                        r += dRow;
+                        c += dCol;
+                    }
+                }
+
+                switch (pieceType) {
+                    case 'p':
+                        const direction = isWhitePiece ? -1 : 1;
+                        if (row + direction >= 0 && row + direction < 8 && !boardState[row + direction][col]) {
+                            moves.push([row + direction, col]);
+                            if ((isWhitePiece && row === 6) || (!isWhitePiece && row === 1)) {
+                                if (boardState[row + 2 * direction] && !boardState[row + 2 * direction][col]) moves.push([row + 2 * direction, col]);
+                            }
+                        }
+                        if (col > 0 && boardState[row + direction] && boardState[row + direction][col - 1] && !isSameColor(piece, boardState[row + direction][col - 1])) moves.push([row + direction, col - 1]);
+                        if (col < 7 && boardState[row + direction] && boardState[row + direction][col + 1] && !isSameColor(piece, boardState[row + direction][col + 1])) moves.push([row + direction, col + 1]);
+                        break;
+                    case 'r':
+                        checkDirection(1, 0); checkDirection(-1, 0); checkDirection(0, 1); checkDirection(0, -1);
+                        break;
+                    case 'n':
+                        const knightMoves = [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2], [-1, 2], [-1, -2]];
+                        knightMoves.forEach(move => {
+                            const newRow = row + move[0], newCol = col + move[1];
+                            if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8 && (!boardState[newRow][newCol] || !isSameColor(piece, boardState[newRow][newCol]))) moves.push([newRow, newCol]);
+                        });
+                        break;
+                    case 'b':
+                        checkDirection(1, 1); checkDirection(1, -1); checkDirection(-1, 1); checkDirection(-1, -1);
+                        break;
+                    case 'q':
+                        checkDirection(1, 0); checkDirection(-1, 0); checkDirection(0, 1); checkDirection(0, -1);
+                        checkDirection(1, 1); checkDirection(1, -1); checkDirection(-1, 1); checkDirection(-1, -1);
+                        break;
+                    case 'k':
+                        const kingMoves = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+                        kingMoves.forEach(move => {
+                            const newRow = row + move[0], newCol = col + move[1];
+                            if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8 && (!boardState[newRow][newCol] || !isSameColor(piece, boardState[newRow][newCol]))) moves.push([newRow, newCol]);
+                        });
+                        break;
+                }
+                return moves;
+            }
+
+            function handleSquareClick(event) {
+                if (turn !== 'white') {
+                    console.log("Klick ignoriert, nicht dein Zug. turn =", turn);
+                    return;
+                }
+
+                const square = event.currentTarget;
+                const row = parseInt(square.dataset.row, 10);
+                const col = parseInt(square.dataset.col, 10);
+                const piece = board[row][col];
+
+                console.log(`Klick: dataset -> row=${row}, col=${col}, boardPiece=${piece}`);
+
+                if (selectedSquare) {
+                    const fromRow = parseInt(selectedSquare.dataset.row, 10);
+                    const fromCol = parseInt(selectedSquare.dataset.col, 10);
+                    const validMoves = getValidMoves(board, fromRow, fromCol);
+                    const isValid = validMoves.some(move => move[0] === row && move[1] === col);
+
+                    console.log(`Versuche Zug von [${fromRow},${fromCol}] -> [${row},${col}] gültig?`, isValid);
+
+                    if (isValid) {
+                        applyMove(board, fromRow, fromCol, row, col);
+
+                        if (pendingPromotion) {
+                            // Promotion-Modal öffnen → wartet auf Auswahl
+                            showPromotionModal('white', (choice) => {
+                                finalizePromotion(choice);
+                            });
+                        } else {
+                            // normaler Ablauf
+                            turn = 'black';
+                            renderBoard();
+                            updateStatus();
+
+                            if (!isCheckmate(board, 'black') && !isStalemate(board, 'black')) {
+                                setTimeout(makeBotMove, 500);
+                            }
+                        }
+                    }
+                    else {
+                        console.log("Ungültiger Zug - Abbruch");
+                    }
+
+
+                    selectedSquare.classList.remove('selected');
+                    document.querySelectorAll('.highlight-move, .highlight-capture').forEach(sq => {
+                        sq.classList.remove('highlight-move', 'highlight-capture');
+                    });
+                    selectedSquare = null;
+
+                } else {
+                    // WICHTIG: Nur weiße Figuren auswählbar, wenn Weiß am Zug ist
+                    if (!piece) {
+                        console.log("Keine Figur auf dem Feld.");
+                        return;
+                    }
+                    if (!isWhite(piece)) {
+                        console.log("Nicht auswählbar: Nicht-weiße Figur (du spielst Weiß). piece=", piece);
+                        return;
+                    }
+
+                    // Wenn alles OK, markiere die Auswahl und zeige Moves
+                    selectedSquare = square;
+                    selectedSquare.classList.add('selected');
+                    const validMoves = getValidMoves(board, row, col);
+
+                    // Highlighten der Ziel-Felder (sicherstellen, dass diese DOM-Targets existieren)
+                    validMoves.forEach(move => {
+                        const [r, c] = move;
+                        const targetSquare = boardDiv.querySelector(`[data-row="${r}"][data-col="${c}"]`);
+                        if (targetSquare) {
+                            if (board[r][c]) targetSquare.classList.add('highlight-capture');
+                            else targetSquare.classList.add('highlight-move');
+                        } else {
+                            // Sollte nicht passieren dank gridRowStart/gridColumnStart, aber zur Sicherheit:
+                            console.warn("Ziel-Feld nicht im DOM gefunden:", r, c);
+                        }
+                    });
+                }
+            }
+
+
+
+            // KI-Logik (Minimax mit Alpha-Beta-Pruning)
+            function makeBotMove() {
+                if (turn !== 'black' || isCheckmate(board, 'white') || isStalemate(board, 'white')) return;
+
+                thinkingIndicator.style.display = 'block';
+
+                // ✅ statt feste 4, jetzt dynamisch:
+                const bestMove = minimax(JSON.parse(JSON.stringify(board)), botDepth, -Infinity, Infinity, true);
+
+                thinkingIndicator.style.display = 'none';
+
+                if (bestMove && bestMove.move) {
+                    const [fromRow, fromCol] = bestMove.move.from;
+                    const [toRow, toCol] = bestMove.move.to;
+                    applyMove(board, fromRow, fromCol, toRow, toCol);
+
+                    turn = 'white';
+                    renderBoard();
+                    updateStatus();
+                }
+            }
+
+            function getPossibleMoves(boardState, color) {
+                const moves = [];
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        const piece = boardState[r][c];
+                        if (piece && ((color === 'white' && isWhite(piece)) || (color === 'black' && isBlack(piece)))) {
+                            const validMoves = getValidMoves(boardState, r, c);
+                            validMoves.forEach(move => {
+                                moves.push({from: [r, c], to: move});
+                            });
+                        }
+                    }
+                }
+                return moves;
+            }
+
+            function minimax(boardState, depth, alpha, beta, isMaximizingPlayer) {
+                if (
+                    depth === 0 ||
+                    isCheckmate(boardState, 'white') ||
+                    isCheckmate(boardState, 'black') ||
+                    isStalemate(boardState, 'white') ||
+                    isStalemate(boardState, 'black')
+                ) {
+                    return {score: evaluateBoard(boardState)};
+                }
+
+                const currentPlayer = isMaximizingPlayer ? 'black' : 'white';
+                const moves = getPossibleMoves(boardState, currentPlayer);
+
+                if (isMaximizingPlayer) {
+                    let maxEval = -Infinity;
+                    let bestMove = null;
+                    for (const move of moves) {
+                        const newBoard = JSON.parse(JSON.stringify(boardState));
+                        const [fromRow, fromCol] = move.from;
+                        const [toRow, toCol] = move.to;
+
+                        applyMove(newBoard, fromRow, fromCol, toRow, toCol);
+
+                        const evaluation = minimax(newBoard, depth - 1, alpha, beta, false);
+
+                        if (evaluation.score > maxEval) {
+                            maxEval = evaluation.score;
+                            bestMove = move;
+                        }
+                        alpha = Math.max(alpha, evaluation.score);
+                        if (beta <= alpha) break;
+                    }
+                    return {score: maxEval, move: bestMove};
+
+                } else {
+                    let minEval = Infinity;
+                    for (const move of moves) {
+                        const newBoard = JSON.parse(JSON.stringify(boardState));
+                        const [fromRow, fromCol] = move.from;
+                        const [toRow, toCol] = move.to;
+
+                        applyMove(newBoard, fromRow, fromCol, toRow, toCol);
+
+                        const evaluation = minimax(newBoard, depth - 1, alpha, beta, true);
+                        minEval = Math.min(minEval, evaluation.score);
+                        beta = Math.min(beta, evaluation.score);
+                        if (beta <= alpha) break;
+                    }
+                    return {score: minEval, move: null};
+                }
+            }
+
+
+            newGameBtn.addEventListener('click', initializeBoard);
+            initializeBoard();
+        }
+
+        // =========================================================================
+        // BOOT-SEQUENZ
+        // =========================================================================
+        const loadingPhases = [
+            {title: "PHASE 1: SYSTEM-KERNEL LADEN", logs: [{text: "Initialisiere Core-Module...", delay: 600, status: "OK"}, {text: "Prüfe Speicherintegrität...", delay: 500, status: "OK"}], progress: 33},
+            {title: "PHASE 2: NETZWERK-PROTOKOLLE", logs: [{text: "WARNUNG: Fremdzugriff auf Port 80...", delay: 800, status: "WARN"}, {text: "Isoliere verdächtige Verbindung...", delay: 1000, status: "INFO"}, {text: "Netzwerk gesichert.", delay: 400, status: "SUCCESS"}], progress: 66},
+            {title: "PHASE 3: KERNKOMPONENTEN STARTEN", logs: [{text: "Rendere Partikel-Matrix...", delay: 700, status: "OK"}, {text: "Berechne Vektoren...", delay: 900, status: "OK"}], progress: 100, action: () => {animationPhase = 'xInflow';}}
+        ];
+
+        async function runBootSequence() {
+            loadingLog.style.opacity = 1;
+            progressBarContainer.style.opacity = 1;
+            let currentProgress = 0;
+            for (const phase of loadingPhases) {
+                loadingText.textContent = phase.title;
+                for (const log of phase.logs) {
+                    const newLogLine = document.createElement('p');
+                    newLogLine.classList.add('log-line');
+                    newLogLine.innerHTML = `> <span class="status-${log.status.toLowerCase()}">[ ${log.status} ]</span> ${log.text}`;
+                    loadingLog.appendChild(newLogLine);
+                    loadingLog.scrollTop = loadingLog.scrollHeight;
+                    await new Promise(r => setTimeout(r, log.delay));
+                }
+                if (phase.action) phase.action();
+                updateProgressBar(currentProgress, phase.progress, 500);
+                currentProgress = phase.progress;
+                await new Promise(r => setTimeout(r, 800));
+            }
+            await new Promise(r => setTimeout(r, 2500));
+            showDesktop();
+        }
+
+        function updateProgressBar(startWidth, targetWidth, duration) {
+            const startTime = performance.now();
+            function step(timestamp) {
+                const elapsed = timestamp - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeProgress = 0.5 - 0.5 * Math.cos(progress * Math.PI);
+                progressBar.style.width = (startWidth + (targetWidth - startWidth) * easeProgress) + '%';
+                if (progress < 1) window.requestAnimationFrame(step);
+            }
+            window.requestAnimationFrame(step);
+        }
+
+        /**
+         * Zeigt den Desktop-Bildschirm an und blendet den Ladebildschirm aus.
+         */
+        async function showDesktop() {
+            loadingText.style.opacity = 0;
+            accessGranted.style.display = 'block';
+            accessGranted.style.opacity = 1;
+            await new Promise(r => setTimeout(r, 2000));
+            accessGranted.style.opacity = 0;
+            await new Promise(r => setTimeout(r, 1000));
+            loader.style.display = 'none';
+            desktop.style.display = 'flex';
+        }
+
+        // --- Event-Listener und Initialisierung ---
+        newTerminalBtn.addEventListener('click', () => createTerminalWindow());
+        consoleIcon.addEventListener('click', () => {
+            desktop.style.display = 'none';
+            newTerminalBtn.style.display = 'block';
+            createTerminalWindow();
         });
-
-        const points = new THREE.Points(particleGeo, particleMat);
-        scene.add(points);
-
-        // soft ambient glow
-        const light = new THREE.PointLight(0x66ff88, 0.6);
-        camera.add(light);
-        scene.add(camera);
-
-        window.addEventListener('resize', onWindowResize);
-        log('3D initialized');
-      } catch (err) {
-        console.error('init3D error', err);
-        log('3D init failed: ' + (err.message || err));
-      }
-    }
-    function animate3D() {
-      try {
-        if (!renderer) return;
-        const t = performance.now() * 0.0002;
-        // rotate whole scene slowly
-        scene.rotation.y = t * 0.2;
-        scene.rotation.x = Math.sin(t*0.15)*0.05;
-
-        // subtle per-vertex motion
-        const pos = particleGeo.attributes.position.array;
-        for (let i=0;i<PARTICLE_COUNT;i++){
-          const idx = i*3;
-          pos[idx+0] += Math.sin(t + i)*0.0009;
-          pos[idx+1] += Math.cos(t*0.7 + i)*0.0007;
-        }
-        particleGeo.attributes.position.needsUpdate = true;
-
-        renderer.render(scene, camera);
-        animId = requestAnimationFrame(animate3D);
-      } catch (err) {
-        console.error('animate3D error', err);
-        log('3D animate failed: ' + (err.message || err));
-      }
-    }
-    function onWindowResize(){
-      if (!camera || !renderer) return;
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-
-    // --------- Boot sequence ----------
-    const phases = [
-      { title: 'PHASE 1: SYSTEM-KERNEL LADEN', logs:[{t:'Initialisiere Core-Module...',d:500},{t:'Initialisiere Grafikmodule...',d:500}],progress:30 },
-      { title: 'PHASE 2: NETZWERK-PROTOKOLLE', logs:[{t:'Prüfe Netzwerk...',d:700},{t:'Sicherheits-Handshake OK',d:450}],progress:66 },
-      { title: 'PHASE 3: KERNKOMPONENTEN STARTEN', logs:[{t:'Rendere Partikel-Matrix...',d:700},{t:'Boot abgeschlossen',d:600}],progress:100 }
-    ];
-
-    async function runBootSequence(){
-      loadingLogEl.style.display='block';
-      progressFill.style.width = '0%';
-      log('Boot started');
-      for (let p of phases){
-        document.getElementById('loading-text').textContent = p.title;
-        for (let li of p.logs){
-          log(li.t);
-          await new Promise(r => setTimeout(r, li.d));
-        }
-        progressFill.style.width = p.progress + '%';
-        await new Promise(r => setTimeout(r, 350));
-      }
-      await new Promise(r => setTimeout(r, 700));
-      document.getElementById('access-granted').style.display = 'block';
-      await new Promise(r => setTimeout(r, 900));
-      document.getElementById('loader').style.display = 'none';
-      await showLoginScreen();
-    }
-
-    // --------- Login UI wiring ----------
-    function setupLoginListeners(){
-      const usernameInput = document.getElementById('username');
-      const passwordInput = document.getElementById('password');
-      const loginBtn = document.getElementById('login-btn');
-      const registerBtn = document.getElementById('register-btn');
-      const loginMessage = document.getElementById('login-message');
-
-      const showMessage = (msg, error=true)=>{
-        loginMessage.textContent = msg;
-        loginMessage.style.color = error ? '#ff6666' : '#66ff88';
-      };
-
-      async function doLogin(){
-        const user = usernameInput.value.trim();
-        const pass = passwordInput.value.trim();
-        if (!user || !pass) return showMessage('Benutzer & Passwort benötigt');
-        showMessage('...', false);
-        try {
-          await loginToServer(user, pass);
-          currentUser = user;
-          document.getElementById('login-screen').style.display = 'none';
-          document.getElementById('desktop').style.display = 'block';
-          showMessage('', false);
-        } catch (err) {
-          console.warn('login failed', err);
-          showMessage(err?.error || 'Login fehlgeschlagen');
-        }
-      }
-      loginBtn.addEventListener('click', doLogin);
-      passwordInput.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') doLogin(); });
-
-      registerBtn.addEventListener('click', async ()=>{
-        const user = usernameInput.value.trim();
-        const pass = passwordInput.value.trim();
-        if (!user || !pass) return showMessage('Benutzer & Passwort benötigt');
-        showMessage('Registriere...', false);
-        try {
-          await registerToServer(user, pass);
-          currentUser = user;
-          document.getElementById('login-screen').style.display = 'none';
-          document.getElementById('desktop').style.display = 'block';
-          showMessage('Registrierung ok', false);
-        } catch (err) {
-          console.warn('register failed', err);
-          showMessage(err?.error || 'Registrierung fehlgeschlagen');
-        }
-      });
-    }
-
-    // Logout handler
-    function handleLogout(){
-      logoutFromServer();
-      document.getElementById('desktop').style.display = 'none';
-      document.getElementById('login-screen').style.display = 'flex';
-      document.getElementById('username').value = '';
-      document.getElementById('password').value = '';
-    }
-
-    // attach icons
-    document.getElementById('logout-icon').addEventListener('click', handleLogout);
-
-    // --------- Auto-login check & showLoginScreen ----------
-    let currentUser = null;
-    async function showLoginScreen(){
-      // attempt checkMe
-      const me = await checkMe();
-      if (me && me.username){
-        currentUser = me.username;
-        document.getElementById('desktop').style.display = 'block';
-        document.getElementById('login-screen').style.display = 'none';
-      } else {
-        document.getElementById('login-screen').style.display = 'flex';
-      }
-    }
-
-    // --------- Debug overlay (in-page) ----------
-    function installDebug(){
-      try {
-        const dbg = document.getElementById('debug-overlay');
-        dbg.style.display = 'block';
-        dbg.innerHTML = '<b>DEBUG PANEL</b><div id="dbg-lines" style="margin-top:8px;max-height:32vh;overflow:auto"></div>';
-        const dlines = document.getElementById('dbg-lines');
-        function dbglog(t){ const e=document.createElement('div'); e.textContent = '['+new Date().toLocaleTimeString()+'] '+t; dlines.appendChild(e); dlines.scrollTop=dlines.scrollHeight; }
-        window.addEventListener('error', ev => dbglog('ERROR: '+(ev.message||ev.error?.message)));
-        window.addEventListener('unhandledrejection', ev => dbglog('UNHANDLED REJECTION: '+(ev.reason?.message||JSON.stringify(ev.reason))));
-        dbglog('Debug overlay active');
-      } catch(e){ console.warn('debug install err', e); }
-    }
-
-    // --------- initialize app ----------
-    window.addEventListener('load', async ()=>{
-      // ensure three exists
-      if (!window.THREE) {
-        // try dynamic load fallback (shouldn't happen because we loaded in head)
-        try {
-          await new Promise((res, rej) => {
-            const s = document.createElement('script');
-            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
-            s.onload = res; s.onerror = rej; document.head.appendChild(s);
-          });
-          log('three.js loaded (fallback)');
-        } catch(e){
-          log('three.js could not be loaded: ' + e.message);
-        }
-      }
-
-      // init 3D & start animation
-      init3D();
-      animate3D();
-      installDebug();
-      setupLoginListeners();
-
-      // run boot sequence (this will hide loader and show login/desktop)
-      try {
-        await runBootSequence();
-      } catch (e) {
-        console.error('Boot error', e);
-        log('Boot crashed: ' + (e.message||e));
-        // still try to show login
-        document.getElementById('loader').style.display = 'none';
-        await showLoginScreen();
-      }
-    });
-
-    // Expose for debug & manual control
-    window.init3D = init3D;
-    window.animate3D = animate3D;
-    window.__app = { registerToServer, loginToServer, checkMe, logoutFromServer };
-  })();
-  </script>
+        chessIcon.addEventListener('click', () => {
+            desktop.style.display = 'none';
+            newTerminalBtn.style.display = 'block';
+            createChessWindow();
+        });
+        window.onload = () => {init3D(); animate3D(); runBootSequence();};
+    </script>
 </body>
+
 </html>
