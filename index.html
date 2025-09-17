@@ -1101,6 +1101,192 @@
 
     })();
     </script>
+    <!-- DEBUG + ROBUST SAVE HANDLER: paste this before </body> -->
+    <script>
+    (function(){
+      const SAVE_BTN_TEXT_CANDIDATES = ['speichern','save','spiel speichern','replay speichern','save game'];
+      const SAVE_BTN_ID = 'save-replay-btn-debug';
+      const STATUS_ID = 'save-status-debug';
+
+      // Helper: try to find existing button by id or by text
+      function findSaveButton() {
+        let btn = document.getElementById(SAVE_BTN_ID);
+        if (btn) return btn;
+        // search for typical ids
+        const byIds = ['save-replay-btn','save-btn','save-game','saveReplay','save'];
+        for (const id of byIds) { const el = document.getElementById(id); if (el) return el; }
+        // search by visible text labels (German/English)
+        const allBtns = Array.from(document.querySelectorAll('button,input[type="button"],input[type="submit"]'));
+        for (const t of SAVE_BTN_TEXT_CANDIDATES) {
+          const found = allBtns.find(el => (el.innerText||el.value||'').toLowerCase().includes(t));
+          if (found) return found;
+        }
+        return null;
+      }
+
+      // Ensure a visible button exists (create if needed)
+      function ensureSaveButton() {
+        let btn = findSaveButton();
+        if (btn) {
+          // ensure id and classes
+          if (!btn.id) btn.id = SAVE_BTN_ID;
+          btn.classList.add('hacker-btn');
+          return btn;
+        }
+        // create a floating button top-right
+        btn = document.createElement('button');
+        btn.id = SAVE_BTN_ID;
+        btn.textContent = 'Spiel speichern';
+        btn.className = 'hacker-btn';
+        Object.assign(btn.style, {
+          position:'fixed', right:'18px', top:'18px', zIndex:99990
+        });
+        document.body.appendChild(btn);
+        return btn;
+      }
+
+      // Status overlay
+      function ensureStatus() {
+        let s = document.getElementById(STATUS_ID);
+        if (!s) {
+          s = document.createElement('div');
+          s.id = STATUS_ID;
+          Object.assign(s.style, {
+            position:'fixed', right:'18px', top:'60px', zIndex:99990,
+            background:'rgba(0,0,0,0.8)', color:'#bfffcf', padding:'8px 10px',
+            border:'1px solid rgba(0,255,102,0.12)', borderRadius:'6px', fontFamily:'monospace'
+          });
+          document.body.appendChild(s);
+        }
+        return s;
+      }
+
+      // Try to build sensible game payload
+      function buildGamePayload() {
+        // common fallbacks (most projects expose lastGame / lastLoadedReplay / chess / game)
+        if (window.lastGame) return window.lastGame;
+        if (window.lastLoadedReplay) return window.lastLoadedReplay;
+        if (window.game && typeof window.game === 'object') return window.game;
+        // chess.js often exposes Chess instance or exported pgn function
+        if (window.chess && typeof window.chess.pgn === 'function') {
+          return { pgn: window.chess.pgn(), note: 'from window.chess.pgn()' };
+        }
+        // try to find any object in window that looks like a pgn
+        const keys = Object.keys(window);
+        for (const k of ['lastGame','game','match','replay']) { if (window[k]) return window[k]; }
+        // last resort - build minimal sample
+        return { pgn: '1. e4 e5 2. Nf3 Nc6', note: 'auto-generated fallback' , client_ts: new Date().toISOString() };
+      }
+
+      // Resolve save function
+      function getSaveFn() {
+        if (window.__firebaseHelpers && typeof window.__firebaseHelpers.saveGameCloud === 'function') return window.__firebaseHelpers.saveGameCloud;
+        if (typeof saveGameCloud === 'function') return saveGameCloud;
+        return null;
+      }
+
+      // Quick check if user is likely logged in (best-effort)
+      async function isUserLoggedIn() {
+        try {
+          if (window.__firebaseHelpers && typeof window.__firebaseHelpers.onAuthChanged === 'function') {
+            // we don't want to attach a listener here; rather check auth.currentUser if available
+          }
+          // If firebase exposes auth currentUser:
+          if (window.firebase && firebase.auth && firebase.auth().currentUser) return !!firebase.auth().currentUser;
+          if (window.__firebaseHelpers && window.__firebaseHelpers._lastUser) return !!window.__firebaseHelpers._lastUser;
+          // best-effort: look for auth object on global firebase modular? skip
+          return null; // unknown
+        } catch (e) { return null; }
+      }
+
+      // Save logic
+      async function performSave() {
+        const status = ensureStatus();
+        status.textContent = 'Speichere...';
+        status.style.color = '#bfffcf';
+
+        const saveFn = getSaveFn();
+        if (!saveFn) {
+          status.textContent = 'Save-Funktion nicht gefunden (window.__firebaseHelpers.saveGameCloud fehlt)';
+          console.error('Save function missing. window.__firebaseHelpers=', window.__firebaseHelpers);
+          return;
+        }
+
+        const payload = buildGamePayload();
+        console.log('DEBUG: attempting to save payload:', payload);
+
+        try {
+          const id = await saveFn(payload);
+          status.textContent = 'Replay gespeichert (id: ' + id + ')';
+          status.style.color = '#8cff9a';
+          console.log('Saved replay id:', id, 'payload:', payload);
+          setTimeout(()=>{ status.textContent = ''; }, 4000);
+        } catch (err) {
+          console.error('Save failed:', err);
+          // Friendly messages
+          if (err && err.code) {
+            status.textContent = `Fehler: ${err.code} — ${err.message||''}`;
+          } else {
+            status.textContent = 'Save fehlgeschlagen: ' + (err && (err.message || err.toString()) || 'unknown');
+          }
+          // If permission denied, give specific hint
+          if (err && (err.code === 'permission-denied' || (err.message && err.message.toLowerCase().includes('permission')))) {
+            status.textContent += ' — Prüfe Firestore Rules & Auth (eingeloggt?)';
+          }
+        }
+      }
+
+      // Debug listing
+      async function listSavedGames() {
+        const status = ensureStatus();
+        status.textContent = 'Lade gespeicherte Spiele...';
+        try {
+          if (!window.__firebaseHelpers || typeof window.__firebaseHelpers.listGamesCloud !== 'function') {
+            status.textContent = 'listGamesCloud helper fehlt';
+            console.warn('helper missing:', window.__firebaseHelpers);
+            return;
+          }
+          const games = await window.__firebaseHelpers.listGamesCloud();
+          console.log('Gespeicherte Spiele:', games);
+          status.textContent = 'Geladen: ' + (games.length || 0);
+          alert('Gespeicherte Spiele: ' + (games.length || 0) + '. Siehe Console für Details.');
+          setTimeout(()=>{ status.textContent = ''; }, 3000);
+        } catch (e) {
+          console.error('listSavedGames error', e);
+          status.textContent = 'Fehler beim Laden: ' + (e.message||e);
+        }
+      }
+
+      // Bind
+      function bindSave() {
+        const btn = ensureSaveButton();
+        // remove previous handlers to avoid duplicates
+        btn.replaceWith(btn.cloneNode(true));
+        const fresh = document.getElementById(SAVE_BTN_ID);
+        fresh.addEventListener('click', async (e) => { e.preventDefault(); await performSave(); });
+        // add a small right-click menu: right-click lists saved games
+        fresh.addEventListener('contextmenu', function(e){ e.preventDefault(); listSavedGames(); return false; });
+      }
+
+      // Run on DOM ready
+      function start() {
+        bindSave();
+        // also attach to any existing "save" buttons by text (backup)
+        const alt = findSaveButton();
+        if (alt && alt.id !== SAVE_BTN_ID) {
+          alt.addEventListener('click', (e)=>{ e.preventDefault(); performSave(); });
+        }
+      }
+
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+      else start();
+
+      // Expose for manual call
+      window._saveReplay_debug = performSave;
+      window._listReplays_debug = listSavedGames;
+
+    })();
+    </script>
 
 </body>
 </html>
