@@ -568,7 +568,60 @@
         async function sendMessage(terminalId) { const terminal = document.getElementById(terminalId); const userInput = terminal.querySelector('.terminal-input'); const messagesDiv = terminal.querySelector('.terminal-output'); const message = userInput.value.trim(); if (!message) return; displayMessage(messagesDiv, message, 'user'); userInput.disabled = true; userInput.value = ''; try { const botResponse = await getGeminiResponse(message); displayMessage(messagesDiv, botResponse, 'bot'); } catch (error) { console.error("Error sending message:", error); displayMessage(messagesDiv, "An error occurred.", 'bot'); } finally { userInput.disabled = false; userInput.focus(); } }
 
         let windowCounter = 0;
-        function createWindow(title, contentHTML, initialSize = {width: '700px', height: '500px'}) { windowCounter++; const windowId = `window-${windowCounter}`; const newWindow = document.createElement('div'); newWindow.id = windowId; newWindow.className = 'terminal-window'; newWindow.style.zIndex = ++highestZIndex; newWindow.style.width = initialSize.width; newWindow.style.height = initialSize.height; newWindow.style.minWidth = '400px'; newWindow.style.minHeight = '300px'; const offsetX = 50 + (windowCounter * 20) % (window.innerWidth - 800); const offsetY = 50 + (windowCounter * 20) % (window.innerHeight - 600); newWindow.style.left = `${offsetX}px`; newWindow.style.top = `${offsetY}px`; newWindow.innerHTML = `<div class="terminal-header"><h2>${title}</h2><button class="close-btn">[ x ]</button></div><div class="window-content">${contentHTML}</div>`; document.body.appendChild(newWindow); desktop.style.display = 'none'; newTerminalBtn.style.display = 'block'; const header = newWindow.querySelector('.terminal-header'); const closeBtn = newWindow.querySelector('.close-btn'); newWindow.addEventListener('mousedown', () => { newWindow.style.zIndex = ++highestZIndex; }); let isDragging = false, dragOffsetX, dragOffsetY; header.addEventListener('mousedown', (e) => { isDragging = true; dragOffsetX = e.clientX - newWindow.offsetLeft; dragOffsetY = e.clientY - newWindow.offsetTop; header.style.cursor = 'grabbing'; document.body.style.userSelect = 'none'; }); document.addEventListener('mousemove', (e) => { if (isDragging) { const newX = e.clientX - dragOffsetX; const newY = e.clientY - dragOffsetY; newWindow.style.left = `${newX}px`; newWindow.style.top = `${newY}px`; } }); document.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; header.style.cursor = 'grab'; document.body.style.userSelect = 'auto'; } }); closeBtn.addEventListener('click', () => { newWindow.remove(); if (document.querySelectorAll('.terminal-window').length === 0) { desktop.style.display = 'flex'; newTerminalBtn.style.display = 'none'; } }); return newWindow; }
+        function createWindow(title, contentHTML, initialSize = {width: '700px', height: '500px'}) { windowCounter++; const windowId = `window-${windowCounter}`; const newWindow = document.createElement('div'); newWindow.id = windowId; newWindow.className = 'terminal-window'; newWindow.style.zIndex = ++highestZIndex; newWindow.style.width = initialSize.width; newWindow.style.height = initialSize.height; newWindow.style.minWidth = '400px'; newWindow.style.minHeight = '300px'; const offsetX = 50 + (windowCounter * 20) % (window.innerWidth - 800); const offsetY = 50 + (windowCounter * 20) % (window.innerHeight - 600); newWindow.style.left = `${offsetX}px`; newWindow.style.top = `${offsetY}px`; newWindow.innerHTML = `<div class="terminal-header"><h2>${title}</h2><button class="close-btn">[ x ]</button></div><div class="window-content">${contentHTML}</div>`; document.body.appendChild(newWindow); desktop.style.display = 'none'; newTerminalBtn.style.display = 'block'; const header = newWindow.querySelector('.terminal-header'); const closeBtn = newWindow.querySelector('.close-btn');
+            
+            // --- START: Touch and Mouse Drag Logic ---
+            newWindow.addEventListener('mousedown', () => { newWindow.style.zIndex = ++highestZIndex; });
+            newWindow.addEventListener('touchstart', () => { newWindow.style.zIndex = ++highestZIndex; }, { passive: true });
+
+            let isDragging = false, dragOffsetX, dragOffsetY;
+
+            const handleDragStart = (e) => {
+                isDragging = true;
+                const clientX = e.clientX ?? e.touches[0].clientX;
+                const clientY = e.clientY ?? e.touches[0].clientY;
+                dragOffsetX = clientX - newWindow.offsetLeft;
+                dragOffsetY = clientY - newWindow.offsetTop;
+                header.style.cursor = 'grabbing';
+                document.body.style.userSelect = 'none';
+            };
+
+            const handleDragMove = (e) => {
+                if (isDragging) {
+                    // preventDefault for touchmove to avoid scrolling the page
+                    if (e.type === 'touchmove') {
+                        e.preventDefault();
+                    }
+                    const clientX = e.clientX ?? e.touches[0].clientX;
+                    const clientY = e.clientY ?? e.touches[0].clientY;
+                    const newX = clientX - dragOffsetX;
+                    const newY = clientY - dragOffsetY;
+                    newWindow.style.left = `${newX}px`;
+                    newWindow.style.top = `${newY}px`;
+                }
+            };
+
+            const handleDragEnd = () => {
+                if (isDragging) {
+                    isDragging = false;
+                    header.style.cursor = 'grab';
+                    document.body.style.userSelect = 'auto';
+                }
+            };
+
+            // Mouse events
+            header.addEventListener('mousedown', handleDragStart);
+            document.addEventListener('mousemove', handleDragMove);
+            document.addEventListener('mouseup', handleDragEnd);
+
+            // Touch events
+            header.addEventListener('touchstart', handleDragStart, { passive: true });
+            document.addEventListener('touchmove', handleDragMove, { passive: false });
+            document.addEventListener('touchend', handleDragEnd);
+            document.addEventListener('touchcancel', handleDragEnd);
+            // --- END: Touch and Mouse Drag Logic ---
+
+            closeBtn.addEventListener('click', () => { newWindow.remove(); if (document.querySelectorAll('.terminal-window').length === 0) { desktop.style.display = 'flex'; newTerminalBtn.style.display = 'none'; } }); return newWindow; }
         function createTerminalWindow() { const terminalContent = `<div class="terminal-output"><div class="log-entry">> Initialisiere Schnittstelle... [OK]</div><div class="log-entry">> Lade Module... [OK]</div></div><div class="terminal-input-container"><span class="prompt-symbol">></span><input type="text" class="terminal-input" placeholder="Geben Sie Ihren Befehl ein..." autofocus><button class="sendBtn">Senden</button></div>`; const terminalWindow = createWindow('TERMINAL', terminalContent, {width: '800px', height: '500px'}); const userInput = terminalWindow.querySelector('.terminal-input'); const sendBtn = terminalWindow.querySelector('.sendBtn'); sendBtn.addEventListener('click', () => sendMessage(terminalWindow.id)); userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(terminalWindow.id); }); userInput.focus(); }
 
         let chessScriptsLoaded = false;
@@ -1249,4 +1302,3 @@ document.getElementById('pkt-icon').addEventListener('click', () => {
 
 </body>
 </html>
-
