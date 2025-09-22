@@ -439,24 +439,11 @@
             <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 5V1L8 5l4 4V6c3.87 0 7 3.13 7 7 0 1.3-.34 2.52-.94 3.6L20.9 18C21.6 16.76 22 15.42 22 14c0-5.52-4.48-10-10-10zm0 15c-3.87 0-7-3.13-7-7 0-1.3.34-2.52.94-3.6L3.1 8C2.4 9.24 2 10.58 2 12c0 5.52 4.48 10 10 10v4l4-4-4-4v3z"/></svg>
             <span class="icon-label">Replays</span>
         </div>
-         
-        <div class="desktop-icon" id="pwdgen-icon">
-            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2a6 6 0 0 0-6 6v3H4v8h16v-8h-2V8a6 6 0 0 0-6-6zm-2 9V8a2 2 0 1 1 4 0v3h-4z"/></svg>
-            <span class="icon-label">Passwort</span>
+         <div class="desktop-icon" id="browser-icon">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M4.1,11H9.95C9.85,10.33 9.8,9.67 9.8,9C9.8,8.33 9.85,7.67 9.95,7H4.1C4.04,7.66 4,8.33 4,9C4,9.67 4.04,10.33 4.1,11M14.05,11H19.9C19.96,10.33 20,9.67 20,9C20,8.33 19.96,7.66 19.9,7H14.05C14.15,7.67 14.2,8.33 14.2,9C14.2,9.67 14.15,10.33 14.05,11M4.1,13H9.95C9.85,13.67 9.8,14.33 9.8,15C9.8,15.67 9.85,16.33 9.95,17H4.1C4.04,16.34 4,15.67 4,15C4,14.33 4.04,13.67 4.1,13M14.05,13H19.9C19.96,13.67 20,14.33 20,15C20,15.67 19.96,16.34 19.9,17H14.05C14.15,16.33 14.2,15.67 14.2,15C14.2,14.33 14.15,13.67 14.05,13M12,4.05C12.33,5.36 12.5,6.72 12.5,8.1C12.5,9.47 12.33,10.84 12,12.15C11.67,10.84 11.5,9.47 11.5,8.1C11.5,6.72 11.67,5.36 12,4.05M12,18.05C11.67,16.74 11.5,15.37 11.5,14C11.5,12.63 11.67,11.26 12,9.95C12.33,11.26 12.5,12.63 12.5,14C12.5,15.37 12.33,16.74 12,18.05Z" /></svg>
+            <span class="icon-label">Browser</span>
         </div>
-        <div class="desktop-icon" id="hash-icon">
-            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M10 3H3v7h7V3zm0 11H3v7h7v-7zM21 3h-7v7h7V3zm0 11h-7v7h7v-7z"/></svg>
-            <span class="icon-label">Hash</span>
-        </div>
-        <div class="desktop-icon" id="b64-icon">
-            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2L2 7v7c0 5 3.58 9.74 10 13 6.42-3.26 10-8 10-13V7l-10-5z"/></svg>
-            <span class="icon-label">Base64</span>
-        </div>
-        <div class="desktop-icon" id="pkt-icon">
-            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2L2 7v13h20V7L12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg>
-            <span class="icon-label">Pkt-Vis</span>
-        </div>
-<div class="desktop-icon" id="logout-icon">
+         <div class="desktop-icon" id="logout-icon">
             <svg class="icon-svg" viewBox="0 0 24 24"><path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
             <span class="icon-label">Logout</span>
         </div>
@@ -901,15 +888,11 @@
             if(lastUser){ passwordInput.focus(); } else { usernameInput.focus(); }
         }
 
-        if (consoleIcon) consoleIcon.addEventListener('click', createTerminalWindow);
-        if (chessIcon) chessIcon.addEventListener('click', createChessWindow);
-        if (replayIcon) replayIcon.addEventListener('click', createReplayApp);
-        // browserIcon removed previously; guard to avoid null reference
-        if (typeof browserIcon !== 'undefined' && browserIcon) {
-            // If you re-add the browser icon later, uncomment below
-            // browserIcon.addEventListener('click', createBrowserWindow);
-        }
-        if (logoutIcon) logoutIcon.addEventListener('click', handleLogout);
+        consoleIcon.addEventListener('click', createTerminalWindow);
+        chessIcon.addEventListener('click', createChessWindow);
+        replayIcon.addEventListener('click', createReplayApp);
+        browserIcon.addEventListener('click', createBrowserWindow);
+        logoutIcon.addEventListener('click', handleLogout);
 
         window.onload = () => {
             loadDB();
@@ -1002,251 +985,6 @@
 
     window.addEventListener('load', bindIfExists);
     </script>
-<script>
-// Robust interception: ensure all links/open requests open inside internal iframe.
-// Uses capture-phase click listener, overrides window.open, intercepts forms, and removes target attributes.
-
-(function(){
-  function openInInternalBrowser(url) {
-    try {
-      if (!url) return;
-      // normalize
-      const normalized = (new URL(url, location.href)).href;
-      let browserWin = document.querySelector('.browser-window');
-      if (!browserWin) {
-        // Create a single internal browser window using existing createWindow if available
-        if (typeof createWindow === 'function') {
-          browserWin = createWindow('Browser', `
-            <div class="browser-header-bar">
-              <div class="browser-tab-bar">
-                <div class="browser-tab active"><span class="tab-title">Interner Tab</span></div>
-              </div>
-              <div class="browser-nav-bar">
-                <input type="text" class="browser-url-input" value="${normalized}">
-                <button class="hacker-btn" id="browser-go-btn">Los</button>
-              </div>
-            </div>
-            <div class="browser-content-area">
-              <iframe class="browser-iframe active" sandbox="allow-scripts allow-forms allow-same-origin"></iframe>
-            </div>
-          `, { width: '80vw', height: '80vh' });
-          browserWin.classList.add('browser-window');
-          // attach go button handler
-          setTimeout(() => {
-            const goBtn = browserWin.querySelector('#browser-go-btn');
-            const input = browserWin.querySelector('.browser-url-input');
-            if (goBtn && input) {
-              goBtn.addEventListener('click', () => {
-                const u = input.value.trim();
-                if (u) openInInternalBrowser(u);
-              });
-              input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                  const u = input.value.trim();
-                  if (u) openInInternalBrowser(u);
-                }
-              });
-            }
-          }, 50);
-        } else {
-          // fallback: create minimal container
-          browserWin = document.createElement('div');
-          browserWin.className = 'browser-window';
-          browserWin.innerHTML = `<div class="browser-nav-bar"><input type="text" class="browser-url-input" value="${normalized}"></div><div class="browser-content-area"><iframe class="browser-iframe active"></iframe></div>`;
-          document.body.appendChild(browserWin);
-        }
-      }
-      const iframe = browserWin.querySelector('.browser-iframe.active');
-      const input = browserWin.querySelector('.browser-url-input');
-      if (iframe) {
-        // load into iframe
-        iframe.src = normalized;
-      }
-      if (input) input.value = normalized;
-    } catch (err) {
-      console.error('openInInternalBrowser error:', err);
-    }
-  }
-
-  // Capture-phase click listener to intercept <a> clicks before other handlers
-  document.addEventListener('click', function(e){
-    try {
-      const el = e.target.closest && e.target.closest('a');
-      if (!el) return;
-      const href = el.getAttribute('href');
-      if (!href || href.startsWith('javascript:') || href === '#') {
-        // allow JS links or anchors
-        e.preventDefault();
-        return;
-      }
-      // Respect modifier keys for user intent to open in new real tab? We'll still keep internal behavior per request.
-      e.preventDefault();
-      openInInternalBrowser(href);
-    } catch (err) {
-      // swallow
-    }
-  }, true);
-
-  // Override window.open to route to internal browser
-  (function(){
-    const originalOpen = window.open;
-    window.open = function(url, name, specs){
-      try {
-        if (url) {
-          openInInternalBrowser(url);
-          // return a fake window-like object to avoid scripts breaking
-          return {
-            location: { href: url },
-            close: function(){},
-            focus: function(){},
-            // allow setting location.href
-            set href(v){ openInInternalBrowser(v); }
-          };
-        }
-      } catch (err) { console.error(err); }
-      // fallback
-      return originalOpen.apply(window, arguments);
-    };
-  })();
-
-  // Intercept form submissions
-  document.addEventListener('submit', function(e){
-    try {
-      const form = e.target;
-      if (form && form.tagName === 'FORM') {
-        const action = form.getAttribute('action') || location.href;
-        e.preventDefault();
-        // Build URL for GET or post as data URL for POST (we'll just navigate to action)
-        openInInternalBrowser(action);
-      }
-    } catch (err){}
-  }, true);
-
-  // Remove target attributes from existing and new anchors to avoid opening external tabs/windows
-  function sanitizeAnchor(a){
-    try {
-      if (!(a instanceof HTMLAnchorElement)) return;
-      if (a.target && a.target.toLowerCase() !== '_self') a.removeAttribute('target');
-      // Also remove rel="external noopener" etc that may trigger external behavior
-      // keep rel for security though
-    } catch (e){}
-  }
-  function walkAndSanitize(root){
-    try {
-      const anchors = root.querySelectorAll ? root.querySelectorAll('a') : [];
-      anchors.forEach(sanitizeAnchor);
-    } catch(e){}
-  }
-  // sanitize current document
-  walkAndSanitize(document);
-
-  // observe additions and sanitize dynamic anchors
-  const mo = new MutationObserver(muts => {
-    muts.forEach(m => {
-      if (m.addedNodes && m.addedNodes.length) {
-        m.addedNodes.forEach(node => {
-          if (node.nodeType === 1) {
-            if (node.matches && node.matches('a')) sanitizeAnchor(node);
-            walkAndSanitize(node);
-          }
-        });
-      }
-    });
-  });
-  mo.observe(document.documentElement || document.body, { childList: true, subtree: true });
-
-  // optional: prevent links with target=_blank from triggering default behavior even if other handlers try
-  window.addEventListener('auxclick', function(e){
-    const el = e.target.closest && e.target.closest('a');
-    if (el) e.preventDefault();
-  }, true);
-
-})();
-</script>
-
-
-<script>
-// --- Simple "hacker" tools (safe, no network attacks) ---
-document.getElementById('pwdgen-icon').addEventListener('click', () => {
-    createWindow('Passwortgenerator', `<div style="padding:18px;color:#00ff00;font-family:VT323,monospace;">
-      <label>Länge: <input id="pwd-length" type="number" value="16" min="4" max="128" style="width:70px;background:#000;color:#0f0;border:1px solid #0f0"></label>
-      <div style="margin-top:12px;">
-        <button class="hacker-btn primary" id="gen-pwd">Generieren</button>
-      </div>
-      <pre id="pwd-out" style="margin-top:12px;background:#001a00;padding:10px;border:1px solid #003300;border-radius:6px;"></pre>
-    </div>`, {width:'480px', height:'300px'});
-    const win = document.querySelectorAll('.terminal-window')[document.querySelectorAll('.terminal-window').length-1];
-    const btn = win.querySelector('#gen-pwd');
-    const out = win.querySelector('#pwd-out');
-    btn.addEventListener('click', () => {
-        const len = parseInt(win.querySelector('#pwd-length').value) || 16;
-        const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{};:,.<>?';
-        let res = '';
-        const cryptoObj = window.crypto || window.msCrypto;
-        const arr = new Uint32Array(len);
-        cryptoObj.getRandomValues(arr);
-        for (let i=0;i<len;i++) res += chars[arr[i] % chars.length];
-        out.textContent = res;
-    });
-});
-
-document.getElementById('hash-icon').addEventListener('click', () => {
-    createWindow('Hash-Tool (SHA-256)', `<div style="padding:18px;color:#00ff00;font-family:VT323,monospace;">
-      <textarea id="hash-input" rows="6" style="width:100%;background:#000;color:#0f0;border:1px solid #0f0"></textarea>
-      <div style="margin-top:8px;"><button class="hacker-btn primary" id="do-hash">SHA-256</button></div>
-      <pre id="hash-out" style="margin-top:12px;background:#001a00;padding:10px;border:1px solid #003300;border-radius:6px;"></pre>
-    </div>`, {width:'640px', height:'360px'});
-    const win = document.querySelectorAll('.terminal-window')[document.querySelectorAll('.terminal-window').length-1];
-    win.querySelector('#do-hash').addEventListener('click', async () => {
-        const txt = win.querySelector('#hash-input').value;
-        const enc = new TextEncoder().encode(txt);
-        const hashBuf = await crypto.subtle.digest('SHA-256', enc);
-        const hashArray = Array.from(new Uint8Array(hashBuf));
-        const hashHex = hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
-        win.querySelector('#hash-out').textContent = hashHex;
-    });
-});
-
-document.getElementById('b64-icon').addEventListener('click', () => {
-    createWindow('Base64 Encoder/Decoder', `<div style="padding:18px;color:#00ff00;font-family:VT323,monospace;">
-      <textarea id="b64-input" rows="6" style="width:100%;background:#000;color:#0f0;border:1px solid #0f0"></textarea>
-      <div style="margin-top:8px;display:flex;gap:8px;">
-        <button class="hacker-btn" id="b64-enc">Encode</button>
-        <button class="hacker-btn" id="b64-dec">Decode</button>
-      </div>
-      <pre id="b64-out" style="margin-top:12px;background:#001a00;padding:10px;border:1px solid #003300;border-radius:6px;"></pre>
-    </div>`, {width:'640px', height:'360px'});
-    const win = document.querySelectorAll('.terminal-window')[document.querySelectorAll('.terminal-window').length-1];
-    win.querySelector('#b64-enc').addEventListener('click', () => {
-        const v = win.querySelector('#b64-input').value || '';
-        try { win.querySelector('#b64-out').textContent = btoa(unescape(encodeURIComponent(v))); } catch(e){ win.querySelector('#b64-out').textContent = 'Fehler'; }
-    });
-    win.querySelector('#b64-dec').addEventListener('click', () => {
-        const v = win.querySelector('#b64-input').value || '';
-        try { win.querySelector('#b64-out').textContent = decodeURIComponent(escape(atob(v))); } catch(e){ win.querySelector('#b64-out').textContent = 'Fehler'; }
-    });
-});
-
-document.getElementById('pkt-icon').addEventListener('click', () => {
-    createWindow('Packet Visualizer (Simulation)', `<div style="padding:18px;color:#00ff00;font-family:VT323,monospace;">
-      <div style="display:flex;gap:8px;"><button class="hacker-btn primary" id="start-pkt">Start</button><button class="hacker-btn" id="stop-pkt">Stop</button></div>
-      <div id="pkt-out" style="margin-top:12px;background:#001a00;padding:10px;border:1px solid #003300;border-radius:6px;height:240px;overflow:auto;"></div>
-    </div>`, {width:'600px', height:'420px'});
-    const win = document.querySelectorAll('.terminal-window')[document.querySelectorAll('.terminal-window').length-1];
-    const out = win.querySelector('#pkt-out');
-    let timer=null;
-    function genFake() {
-        const ips = ()=>`${Math.floor(Math.random()*223)+1}.${Math.floor(Math.random()*256)}.${Math.floor(Math.random()*256)}.${Math.floor(Math.random()*256)}`;
-        const protocols = ['TCP','UDP','ICMP','HTTP','DNS'];
-        const line = `${new Date().toLocaleTimeString()} ${ips()}:${Math.floor(Math.random()*65535)} -> ${ips()}:${Math.floor(Math.random()*65535)} [${protocols[Math.floor(Math.random()*protocols.length)]}] size=${Math.floor(Math.random()*1500)}B`;
-        const el = document.createElement('div'); el.textContent = line; out.prepend(el);
-        if (out.children.length>200) out.removeChild(out.lastChild);
-    }
-    win.querySelector('#start-pkt').addEventListener('click', ()=>{ if (timer) return; timer = setInterval(genFake, 350); });
-    win.querySelector('#stop-pkt').addEventListener('click', ()=>{ if (timer) { clearInterval(timer); timer=null; } });
-});
-</script>
-
 </body>
 </html>
 
