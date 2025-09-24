@@ -279,6 +279,65 @@
         .terminal-input-container button { background-color: #008800; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-size: 1rem; font-weight: 400; transition: transform 0.3s ease, box-shadow 0.4s ease; box-shadow: 0 0 8px rgba(0, 255, 0, 0.6); font-family: 'VT323', monospace; }
         .terminal-input-container button:hover { transform: translateY(-2px); box-shadow: 0 0 12px rgba(0, 255, 0, 0.8); }
 
+        /* NEU: Styling für Bild-Upload */
+        .attach-file-btn {
+            background: transparent;
+            border: 1px solid #00FF00;
+            color: #00FF00;
+            font-family: 'VT323', monospace;
+            font-size: 1.5rem;
+            cursor: pointer;
+            margin-right: 10px;
+            padding: 0px 8px 2px 8px;
+            line-height: 1;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        .attach-file-btn:hover {
+            background: #003300;
+            box-shadow: 0 0 8px #00FF00;
+        }
+        .image-preview-container {
+            padding: 10px 20px;
+            background-color: rgba(13, 13, 13, 0.8);
+            border-top: 1px dashed #005500;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .image-preview-thumb {
+            max-height: 80px;
+            max-width: 120px;
+            border: 1px solid #00FF00;
+            border-radius: 4px;
+            object-fit: cover;
+        }
+        .remove-image-btn {
+            background: #550000;
+            border: 1px solid #ff0000;
+            color: #ff0000;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            padding-bottom: 2px;
+            position: static;
+        }
+        .log-entry img {
+            max-width: 90%;
+            max-height: 300px;
+            border-radius: 6px;
+            margin-top: 8px;
+            border: 1px solid #005500;
+            display: block;
+        }
+
         /* ========================================================================= */
         /* MODAL STYLING (für Spielende & Speichern) */
         /* ========================================================================= */
@@ -563,14 +622,114 @@
             noBtn.onclick = closeModal;
         }
 
-        function displayMessage(messagesDiv, message, sender) { const messageElement = document.createElement('div'); messageElement.classList.add('log-entry'); if (sender === 'user') { const userLine = document.createElement('span'); userLine.classList.add('user-input-line'); userLine.textContent = `> ${message}`; messageElement.appendChild(userLine); } else { messageElement.innerHTML = `> ${message.replace(/\n/g, '<br>')}`; } messagesDiv.appendChild(messageElement); messagesDiv.scrollTop = messagesDiv.scrollHeight; }
-        async function getGeminiResponse(userPrompt) { if (!apiKey) { console.error("API key missing."); return "Sorry, there was a configuration error."; } const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`; const payload = { contents: [{role: 'user', parts: [{text: userPrompt}]}], tools: [{"google_search": {}}], systemInstruction: {parts: [{text: "You are a helpful AI assistant from Google. Reply helpfully and friendly in German. Format answers with Markdown."}]} }; try { const response = await fetch(apiUrl, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)}); if (!response.ok) throw new Error(`API Error: ${response.status}`); const result = await response.json(); return result?.candidates?.[0]?.content?.parts?.[0]?.text || "No response received."; } catch (error) { console.error("API call error:", error); return "An error occurred. Please try again."; } }
-        async function sendMessage(terminalId) { const terminal = document.getElementById(terminalId); const userInput = terminal.querySelector('.terminal-input'); const messagesDiv = terminal.querySelector('.terminal-output'); const message = userInput.value.trim(); if (!message) return; displayMessage(messagesDiv, message, 'user'); userInput.disabled = true; userInput.value = ''; try { const botResponse = await getGeminiResponse(message); displayMessage(messagesDiv, botResponse, 'bot'); } catch (error) { console.error("Error sending message:", error); displayMessage(messagesDiv, "An error occurred.", 'bot'); } finally { userInput.disabled = false; userInput.focus(); } }
+        function displayMessage(messagesDiv, message, sender, imageBase64 = null) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('log-entry');
+
+            if (sender === 'user') {
+                const userLine = document.createElement('span');
+                userLine.classList.add('user-input-line');
+                userLine.textContent = `> ${message || ''}`;
+                messageElement.appendChild(userLine);
+            } else {
+                messageElement.innerHTML = `> ${message.replace(/\n/g, '<br>')}`;
+            }
+
+            if (imageBase64) {
+                const imgElement = document.createElement('img');
+                imgElement.src = imageBase64;
+                messageElement.appendChild(imgElement);
+            }
+            
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        async function getGeminiResponse(userPrompt, imageBase64 = null) {
+            if (!apiKey) {
+                console.error("API-Schlüssel fehlt.");
+                return "Entschuldigung, es gab einen Konfigurationsfehler.";
+            }
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            
+            const parts = [];
+            parts.push({ text: userPrompt });
+
+            if (imageBase64) {
+                const match = imageBase64.match(/^data:(image\/.+);base64,(.+)$/);
+                if (match) {
+                    const mimeType = match[1];
+                    const data = match[2];
+                    parts.push({
+                        inlineData: {
+                            mimeType: mimeType,
+                            data: data
+                        }
+                    });
+                } else {
+                    console.error("Ungültiges Base64-Bildformat.");
+                }
+            }
+
+            const payload = {
+                contents: [{ role: 'user', parts: parts }],
+                tools: [{"google_search": {}}],
+                systemInstruction: { parts: [{ text: "You are a helpful AI assistant from Google. Reply helpfully and friendly in German. Format answers with Markdown." }] }
+            };
+            
+            try {
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                const result = await response.json();
+                return result?.candidates?.[0]?.content?.parts?.[0]?.text || "Ich konnte das Bild nicht verarbeiten oder keine Antwort finden.";
+            } catch (error) {
+                console.error("API call error:", error);
+                return "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.";
+            }
+        }
+
+        async function sendMessage(terminalId) {
+            const terminal = document.getElementById(terminalId);
+            if (!terminal) return;
+
+            const userInput = terminal.querySelector('.terminal-input');
+            const messagesDiv = terminal.querySelector('.terminal-output');
+            const previewContainer = terminal.querySelector('.image-preview-container');
+            const fileInput = terminal.querySelector('.file-input');
+
+            const message = userInput.value.trim();
+            const imageBase64 = previewContainer?.dataset.imageBase64 || null;
+
+            if (!message && !imageBase64) return;
+
+            displayMessage(messagesDiv, message, 'user', imageBase64);
+            
+            userInput.disabled = true;
+            userInput.value = '';
+            if (previewContainer) {
+                delete previewContainer.dataset.imageBase64;
+                previewContainer.style.display = 'none';
+            }
+            if (fileInput) {
+                fileInput.value = '';
+            }
+
+            try {
+                const botResponse = await getGeminiResponse(message, imageBase64);
+                displayMessage(messagesDiv, botResponse, 'bot');
+            } catch (error) {
+                console.error("Fehler beim Senden der Nachricht:", error);
+                displayMessage(messagesDiv, "Ein Fehler ist aufgetreten.", 'bot');
+            } finally {
+                userInput.disabled = false;
+                userInput.focus();
+            }
+        }
 
         let windowCounter = 0;
         function createWindow(title, contentHTML, initialSize = {width: '700px', height: '500px'}) { windowCounter++; const windowId = `window-${windowCounter}`; const newWindow = document.createElement('div'); newWindow.id = windowId; newWindow.className = 'terminal-window'; newWindow.style.zIndex = ++highestZIndex; newWindow.style.width = initialSize.width; newWindow.style.height = initialSize.height; newWindow.style.minWidth = '400px'; newWindow.style.minHeight = '300px'; const offsetX = 50 + (windowCounter * 20) % (window.innerWidth - 800); const offsetY = 50 + (windowCounter * 20) % (window.innerHeight - 600); newWindow.style.left = `${offsetX}px`; newWindow.style.top = `${offsetY}px`; newWindow.innerHTML = `<div class="terminal-header"><h2>${title}</h2><button class="close-btn">[ x ]</button></div><div class="window-content">${contentHTML}</div>`; document.body.appendChild(newWindow); desktop.style.display = 'none'; newTerminalBtn.style.display = 'block'; const header = newWindow.querySelector('.terminal-header'); const closeBtn = newWindow.querySelector('.close-btn');
             
-            // --- START: Touch and Mouse Drag Logic ---
             newWindow.addEventListener('mousedown', () => { newWindow.style.zIndex = ++highestZIndex; });
             newWindow.addEventListener('touchstart', () => { newWindow.style.zIndex = ++highestZIndex; }, { passive: true });
 
@@ -588,10 +747,7 @@
 
             const handleDragMove = (e) => {
                 if (isDragging) {
-                    // preventDefault for touchmove to avoid scrolling the page
-                    if (e.type === 'touchmove') {
-                        e.preventDefault();
-                    }
+                    if (e.type === 'touchmove') e.preventDefault();
                     const clientX = e.clientX ?? e.touches[0].clientX;
                     const clientY = e.clientY ?? e.touches[0].clientY;
                     const newX = clientX - dragOffsetX;
@@ -609,20 +765,73 @@
                 }
             };
 
-            // Mouse events
             header.addEventListener('mousedown', handleDragStart);
             document.addEventListener('mousemove', handleDragMove);
             document.addEventListener('mouseup', handleDragEnd);
-
-            // Touch events
             header.addEventListener('touchstart', handleDragStart, { passive: true });
             document.addEventListener('touchmove', handleDragMove, { passive: false });
             document.addEventListener('touchend', handleDragEnd);
             document.addEventListener('touchcancel', handleDragEnd);
-            // --- END: Touch and Mouse Drag Logic ---
 
             closeBtn.addEventListener('click', () => { newWindow.remove(); if (document.querySelectorAll('.terminal-window').length === 0) { desktop.style.display = 'flex'; newTerminalBtn.style.display = 'none'; } }); return newWindow; }
-        function createTerminalWindow() { const terminalContent = `<div class="terminal-output"><div class="log-entry">> Initialisiere Schnittstelle... [OK]</div><div class="log-entry">> Lade Module... [OK]</div></div><div class="terminal-input-container"><span class="prompt-symbol">></span><input type="text" class="terminal-input" placeholder="Geben Sie Ihren Befehl ein..." autofocus><button class="sendBtn">Senden</button></div>`; const terminalWindow = createWindow('TERMINAL', terminalContent, {width: '800px', height: '500px'}); const userInput = terminalWindow.querySelector('.terminal-input'); const sendBtn = terminalWindow.querySelector('.sendBtn'); sendBtn.addEventListener('click', () => sendMessage(terminalWindow.id)); userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(terminalWindow.id); }); userInput.focus(); }
+        
+        function createTerminalWindow() {
+            const terminalContent = `
+                <div class="terminal-output">
+                    <div class="log-entry">> Initialisiere Schnittstelle... [OK]</div>
+                    <div class="log-entry">> Lade Module... [OK]</div>
+                </div>
+                <div class="image-preview-container" style="display: none;">
+                    <img class="image-preview-thumb" src="">
+                    <button class="remove-image-btn" title="Bild entfernen">&times;</button>
+                </div>
+                <div class="terminal-input-container">
+                    <input type="file" class="file-input" accept="image/*" style="display: none;">
+                    <button class="attach-file-btn" title="Bild anhängen">+</button>
+                    <span class="prompt-symbol">></span>
+                    <input type="text" class="terminal-input" placeholder="Nachricht oder Bild..." autofocus>
+                    <button class="sendBtn">Senden</button>
+                </div>`;
+
+            const terminalWindow = createWindow('TERMINAL', terminalContent, {width: '800px', height: '500px'});
+            const terminalId = terminalWindow.id;
+
+            const attachBtn = terminalWindow.querySelector('.attach-file-btn');
+            const fileInput = terminalWindow.querySelector('.file-input');
+            const previewContainer = terminalWindow.querySelector('.image-preview-container');
+            const previewImg = terminalWindow.querySelector('.image-preview-thumb');
+            const removeImgBtn = terminalWindow.querySelector('.remove-image-btn');
+
+            attachBtn.addEventListener('click', () => fileInput.click());
+
+            fileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        previewContainer.dataset.imageBase64 = e.target.result;
+                        previewImg.src = e.target.result;
+                        previewContainer.style.display = 'flex';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            const clearImage = () => {
+                delete previewContainer.dataset.imageBase64;
+                fileInput.value = '';
+                previewContainer.style.display = 'none';
+                previewImg.src = '';
+            };
+
+            removeImgBtn.addEventListener('click', clearImage);
+            
+            const userInput = terminalWindow.querySelector('.terminal-input');
+            const sendBtn = terminalWindow.querySelector('.sendBtn');
+            sendBtn.addEventListener('click', () => sendMessage(terminalId));
+            userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(terminalId); });
+            userInput.focus();
+        }
 
         let chessScriptsLoaded = false;
         function loadScript(src) { return new Promise((resolve, reject) => { if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; } const script = document.createElement('script'); script.src = src; script.onload = () => resolve(); script.onerror = () => reject(new Error(`Konnte Skript nicht laden: ${src}`)); document.head.appendChild(script); }); }
@@ -675,183 +884,65 @@
             const browserWindow = createWindow('Gemini Browser', browserHTML, {width: '85vw', height: '85vh'});
             browserWindow.classList.add('browser-window');
             
-            // Tab management state
-            let tabs = [];
-            let activeTabId = null;
-            let tabCounter = 0;
-
-            // DOM elements
-            const contentContainer = browserWindow.querySelector('.window-content');
-            const tabBar = contentContainer.querySelector('.browser-tab-bar');
-            const newTabBtn = contentContainer.querySelector('.new-tab-btn');
-            const urlInput = contentContainer.querySelector('#url-input');
-            const backBtn = contentContainer.querySelector('#back-btn');
-            const forwardBtn = contentContainer.querySelector('#forward-btn');
-            const reloadBtn = contentContainer.querySelector('#reload-btn');
-            const contentArea = contentContainer.querySelector('.browser-content-area');
-
-            const homeUrl = 'about:newtab';
-            const searchEngineUrl = 'https://www.bing.com/search?q=';
+            let tabs = [], activeTabId = null, tabCounter = 0;
+            const contentContainer = browserWindow.querySelector('.window-content'), tabBar = contentContainer.querySelector('.browser-tab-bar'), newTabBtn = contentContainer.querySelector('.new-tab-btn'), urlInput = contentContainer.querySelector('#url-input'), backBtn = contentContainer.querySelector('#back-btn'), forwardBtn = contentContainer.querySelector('#forward-btn'), reloadBtn = contentContainer.querySelector('#reload-btn'), contentArea = contentContainer.querySelector('.browser-content-area');
+            const homeUrl = 'about:newtab', searchEngineUrl = 'https://www.bing.com/search?q=';
 
             function createNewTab(url = homeUrl, makeActive = true) {
-                tabCounter++;
-                const tabId = `tab-${tabCounter}`;
-
-                // Create Tab Element
-                const tabEl = document.createElement('div');
-                tabEl.className = 'browser-tab';
-                tabEl.dataset.tabId = tabId;
-                tabEl.innerHTML = `<span class="tab-title">Neuer Tab</span><button class="close-tab-btn">&times;</button>`;
-                
-                // Create Content Element (iframe or new tab page)
+                tabCounter++; const tabId = `tab-${tabCounter}`;
+                const tabEl = document.createElement('div'); tabEl.className = 'browser-tab'; tabEl.dataset.tabId = tabId; tabEl.innerHTML = `<span class="tab-title">Neuer Tab</span><button class="close-tab-btn">&times;</button>`;
                 let contentEl;
-                if (url === 'about:newtab') {
-                    contentEl = document.createElement('div');
-                    contentEl.className = 'new-tab-page';
-                    contentEl.innerHTML = `<h2>GEMINI BROWSER</h2><p>Suchen oder URL eingeben</p>`;
-                } else {
-                    contentEl = document.createElement('iframe');
-                    contentEl.className = 'browser-iframe';
-                    contentEl.src = url;
-                    contentEl.addEventListener('load', () => updateTabTitle(tabId));
-                }
+                if (url === 'about:newtab') { contentEl = document.createElement('div'); contentEl.className = 'new-tab-page'; contentEl.innerHTML = `<h2>GEMINI BROWSER</h2><p>Suchen oder URL eingeben</p>`; } 
+                else { contentEl = document.createElement('iframe'); contentEl.className = 'browser-iframe'; contentEl.src = url; contentEl.addEventListener('load', () => updateTabTitle(tabId)); }
                 contentEl.id = tabId;
-
                 const newTab = { id: tabId, url: url, title: 'Neuer Tab', element: tabEl, content: contentEl, history: [url] };
-                tabs.push(newTab);
-                
-                tabBar.insertBefore(tabEl, newTabBtn);
-                contentArea.appendChild(contentEl);
-
+                tabs.push(newTab); tabBar.insertBefore(tabEl, newTabBtn); contentArea.appendChild(contentEl);
                 tabEl.addEventListener('click', () => setActiveTab(tabId));
-                tabEl.querySelector('.close-tab-btn').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    closeTab(tabId);
-                });
-
-                if (makeActive) {
-                    setActiveTab(tabId);
-                }
+                tabEl.querySelector('.close-tab-btn').addEventListener('click', (e) => { e.stopPropagation(); closeTab(tabId); });
+                if (makeActive) setActiveTab(tabId);
             }
-
             function setActiveTab(tabId) {
                 if (activeTabId === tabId) return;
-
                 activeTabId = tabId;
                 tabs.forEach(tab => {
                     const isActive = tab.id === tabId;
                     tab.element.classList.toggle('active', isActive);
                     tab.content.classList.toggle('active', isActive);
-                    if(isActive) {
-                        urlInput.value = (tab.url === 'about:newtab') ? '' : tab.url;
-                        updateNavButtonsForTab(tab);
-                    }
+                    if(isActive) { urlInput.value = (tab.url === 'about:newtab') ? '' : tab.url; updateNavButtonsForTab(tab); }
                 });
             }
-
             function closeTab(tabId) {
-                const tabIndex = tabs.findIndex(t => t.id === tabId);
-                if (tabIndex === -1) return;
-
-                const tabToClose = tabs[tabIndex];
-                tabToClose.element.remove();
-                tabToClose.content.remove();
-                tabs.splice(tabIndex, 1);
-                
-                if (tabs.length === 0) {
-                     browserWindow.querySelector('.close-btn').click(); // Close window if no tabs left
-                } else if (activeTabId === tabId) {
-                    // Activate another tab
-                    const newActiveIndex = Math.max(0, tabIndex - 1);
-                    setActiveTab(tabs[newActiveIndex].id);
-                }
+                const tabIndex = tabs.findIndex(t => t.id === tabId); if (tabIndex === -1) return;
+                const tabToClose = tabs[tabIndex]; tabToClose.element.remove(); tabToClose.content.remove(); tabs.splice(tabIndex, 1);
+                if (tabs.length === 0) browserWindow.querySelector('.close-btn').click(); 
+                else if (activeTabId === tabId) { const newActiveIndex = Math.max(0, tabIndex - 1); setActiveTab(tabs[newActiveIndex].id); }
             }
-            
             function updateTabTitle(tabId) {
-                const tab = tabs.find(t => t.id === tabId);
-                if (!tab || tab.url === 'about:newtab') return;
-                try {
-                     const title = tab.content.contentDocument.title;
-                     if (title) {
-                        tab.title = title;
-                        tab.element.querySelector('.tab-title').textContent = title;
-                     }
-                } catch(e) { /* Cross-origin error, can't access title. Keep default. */ }
+                const tab = tabs.find(t => t.id === tabId); if (!tab || tab.url === 'about:newtab') return;
+                try { const title = tab.content.contentDocument.title; if (title) { tab.title = title; tab.element.querySelector('.tab-title').textContent = title; } } catch(e) {}
             }
-
-            function getActiveTab() {
-                return tabs.find(t => t.id === activeTabId);
-            }
-
+            function getActiveTab() { return tabs.find(t => t.id === activeTabId); }
             function navigateActiveTabTo(url) {
-                const tab = getActiveTab();
-                if (!tab) return;
-                
+                const tab = getActiveTab(); if (!tab) return;
                 let targetUrl = url;
-                // Simple check if it's a URL or a search query
-                if (!url.includes('.') && !url.startsWith('http')) {
-                    targetUrl = searchEngineUrl + encodeURIComponent(url);
-                } else if (!url.startsWith('http')) {
-                    targetUrl = 'https://' + url;
-                }
-
-                tab.url = targetUrl;
-                urlInput.value = targetUrl;
-                
-                if (tab.content.tagName === 'DIV') { // It's a new tab page
-                    const newIframe = document.createElement('iframe');
-                    newIframe.className = 'browser-iframe active';
-                    newIframe.id = tab.id;
-                    newIframe.src = targetUrl;
-                    newIframe.addEventListener('load', () => updateTabTitle(tab.id));
-                    
-                    tab.content.remove();
-                    tab.content = newIframe;
-                    contentArea.appendChild(newIframe);
-                } else {
-                    tab.content.src = targetUrl;
-                }
+                if (!url.includes('.') && !url.startsWith('http')) targetUrl = searchEngineUrl + encodeURIComponent(url);
+                else if (!url.startsWith('http')) targetUrl = 'https://' + url;
+                tab.url = targetUrl; urlInput.value = targetUrl;
+                if (tab.content.tagName === 'DIV') {
+                    const newIframe = document.createElement('iframe'); newIframe.className = 'browser-iframe active'; newIframe.id = tab.id; newIframe.src = targetUrl; newIframe.addEventListener('load', () => updateTabTitle(tab.id));
+                    tab.content.remove(); tab.content = newIframe; contentArea.appendChild(newIframe);
+                } else tab.content.src = targetUrl;
             }
-            
             function updateNavButtonsForTab(tab) {
-                // This is a simplified history; a real implementation is much more complex
-                // For now, we rely on iframe's internal history which we can't inspect
-                // So, let's just enable/disable based on whether it's the new tab page.
                 const isNewTab = tab.url === 'about:newtab';
-                backBtn.disabled = isNewTab;
-                forwardBtn.disabled = isNewTab;
-                reloadBtn.disabled = isNewTab;
+                backBtn.disabled = isNewTab; forwardBtn.disabled = isNewTab; reloadBtn.disabled = isNewTab;
             }
 
-            // Event Listeners
             newTabBtn.addEventListener('click', () => createNewTab());
-            urlInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    navigateActiveTabTo(urlInput.value.trim());
-                }
-            });
-
-            reloadBtn.addEventListener('click', () => {
-                const tab = getActiveTab();
-                if(tab && tab.content.tagName === 'IFRAME') {
-                    try { tab.content.contentWindow.location.reload(); } catch(e){}
-                }
-            });
-            backBtn.addEventListener('click', () => {
-                const tab = getActiveTab();
-                if(tab && tab.content.tagName === 'IFRAME') {
-                    try { tab.content.contentWindow.history.back(); } catch(e){}
-                }
-            });
-            forwardBtn.addEventListener('click', () => {
-                const tab = getActiveTab();
-                if(tab && tab.content.tagName === 'IFRAME') {
-                    try { tab.content.contentWindow.history.forward(); } catch(e){}
-                }
-            });
-
-
-            // Initial tab
+            urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') navigateActiveTabTo(urlInput.value.trim()); });
+            reloadBtn.addEventListener('click', () => { const tab = getActiveTab(); if(tab && tab.content.tagName === 'IFRAME') try { tab.content.contentWindow.location.reload(); } catch(e){} });
+            backBtn.addEventListener('click', () => { const tab = getActiveTab(); if(tab && tab.content.tagName === 'IFRAME') try { tab.content.contentWindow.history.back(); } catch(e){} });
+            forwardBtn.addEventListener('click', () => { const tab = getActiveTab(); if(tab && tab.content.tagName === 'IFRAME') try { tab.content.contentWindow.history.forward(); } catch(e){} });
             createNewTab();
         }
 
@@ -901,86 +992,61 @@
             accessGranted.style.opacity = 0;
             await new Promise(r => setTimeout(r, 1000));
             loader.style.display = 'none';
-            animationIsActive = false; // Stoppt die Animationsschleife
+            animationIsActive = false;
             loginScreen.style.display = 'flex';
             document.getElementById('username').focus();
         }
 
-        // --- Event-Listener und Initialisierung ---
         function setupLoginListeners() {
-            const usernameInput = document.getElementById('username');
-            const passwordInput = document.getElementById('password');
-            const loginBtn = document.getElementById('login-btn');
-            const registerBtn = document.getElementById('register-btn');
-            const loginMessage = document.getElementById('login-message');
-
+            const usernameInput = document.getElementById('username'), passwordInput = document.getElementById('password'), loginBtn = document.getElementById('login-btn'), registerBtn = document.getElementById('register-btn'), loginMessage = document.getElementById('login-message');
             const lastUser = localStorage.getItem('lastLoggedInUser');
             if (lastUser) { usernameInput.value = lastUser; passwordInput.focus(); } 
             else { usernameInput.focus(); }
-
             const showMessage = (msg, isError = true) => { loginMessage.textContent = msg; loginMessage.style.color = isError ? '#ff4444' : '#00ff00'; };
             const attemptLogin = () => {
-                const user = usernameInput.value.trim();
-                const pass = passwordInput.value.trim();
+                const user = usernameInput.value.trim(), pass = passwordInput.value.trim();
                 if (!user || !pass) return showMessage("Benutzername und Passwort erforderlich.");
                 if (db.users[user] && db.users[user] === pass) {
-                    currentUser = user;
-                    localStorage.setItem('lastLoggedInUser', user);
-                    loginScreen.style.display = 'none';
-                    desktop.style.display = 'flex';
+                    currentUser = user; localStorage.setItem('lastLoggedInUser', user);
+                    loginScreen.style.display = 'none'; desktop.style.display = 'flex';
                     showMessage("", false);
-                } else { showMessage("Falscher Benutzername oder Passwort."); }
+                } else showMessage("Falscher Benutzername oder Passwort.");
             };
             loginBtn.addEventListener('click', attemptLogin);
             passwordInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') attemptLogin(); });
             registerBtn.addEventListener('click', () => {
-                const user = usernameInput.value.trim();
-                const pass = passwordInput.value.trim();
+                const user = usernameInput.value.trim(), pass = passwordInput.value.trim();
                 if (!user || !pass) return showMessage("Benutzername und Passwort erforderlich.");
-                if (db.users[user]) { showMessage("Benutzername bereits vergeben."); } 
+                if (db.users[user]) showMessage("Benutzername bereits vergeben."); 
                 else { db.users[user] = pass; db.userGames[user] = []; saveDB(); showMessage("Registrierung erfolgreich! Bitte einloggen.", false); }
             });
         }
         function handleLogout() {
             currentUser = null;
             document.querySelectorAll('.terminal-window').forEach(win => win.remove());
-            desktop.style.display = 'none';
-            newTerminalBtn.style.display = 'none';
+            desktop.style.display = 'none'; newTerminalBtn.style.display = 'none';
             loginScreen.style.display = 'flex';
-            const usernameInput = document.getElementById('username');
-            const passwordInput = document.getElementById('password');
-            const lastUser = localStorage.getItem('lastLoggedInUser');
+            const usernameInput = document.getElementById('username'), passwordInput = document.getElementById('password'), lastUser = localStorage.getItem('lastLoggedInUser');
             usernameInput.value = lastUser || ''; passwordInput.value = '';
-            if(lastUser){ passwordInput.focus(); } else { usernameInput.focus(); }
+            if(lastUser) passwordInput.focus(); else usernameInput.focus();
         }
 
         if (consoleIcon) consoleIcon.addEventListener('click', createTerminalWindow);
         if (chessIcon) chessIcon.addEventListener('click', createChessWindow);
         if (replayIcon) replayIcon.addEventListener('click', createReplayApp);
-        // browserIcon removed previously; guard to avoid null reference
-        if (typeof browserIcon !== 'undefined' && browserIcon) {
-            // If you re-add the browser icon later, uncomment below
-            // browserIcon.addEventListener('click', createBrowserWindow);
-        }
+        if (typeof browserIcon !== 'undefined' && browserIcon) {}
         if (logoutIcon) logoutIcon.addEventListener('click', handleLogout);
 
         window.onload = () => {
-            loadDB();
-            init3D(); 
-            animationIsActive = true;
-            animate3D(); 
-            runBootSequence();
-            setupLoginListeners();
+            loadDB(); init3D(); animationIsActive = true; animate3D(); runBootSequence(); setupLoginListeners();
         };
     </script>
 
-<!-- Firebase integration (auto-inserted) -->
     <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
     import { getFirestore, collection, addDoc, getDocs, query, orderBy, setDoc, doc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyD5wHz7l93lvOSkBqVQE0oRwovVZhyxK5Y",
       authDomain: "datenbank-stasi.firebaseapp.com",
@@ -994,55 +1060,32 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // helper wrappers
     async function registerFirebase(email, password, username) {
       const cred = await createUserWithEmailAndPassword(auth, email, password);
-      // Benutzername auch in Firestore speichern
-      await setDoc(doc(db, "users", cred.user.uid), {
-        username: username,
-        email: email,
-        created_at: new Date().toISOString()
-      });
+      await setDoc(doc(db, "users", cred.user.uid), { username: username, email: email, created_at: new Date().toISOString() });
       return cred;
     }
-    async function loginFirebase(email, password) {
-      return signInWithEmailAndPassword(auth, email, password);
-    }
-    async function logoutFirebase() {
-      return signOut(auth);
-    }
+    async function loginFirebase(email, password) { return signInWithEmailAndPassword(auth, email, password); }
+    async function logoutFirebase() { return signOut(auth); }
     function onAuthChanged(callback) { return onAuthStateChanged(auth, callback); }
 
-    // auto-bind if elements exist (keeps original UI working)
     const bindIfExists = () => {
-      const loginBtn = document.getElementById('login-btn');
-      const registerBtn = document.getElementById('register-btn');
-      const logoutIcon = document.getElementById('logout-icon');
-      const loginMessage = document.getElementById('login-message');
-
+      const loginBtn = document.getElementById('login-btn'), registerBtn = document.getElementById('register-btn'), logoutIcon = document.getElementById('logout-icon'), loginMessage = document.getElementById('login-message');
       if (loginBtn) loginBtn.addEventListener('click', async ()=>{
-        const email = document.getElementById('email')?.value.trim() || "";
-        const pwd = document.getElementById('password')?.value.trim() || "";
+        const email = document.getElementById('email')?.value.trim() || "", pwd = document.getElementById('password')?.value.trim() || "";
         try { await loginFirebase(email,pwd); loginMessage.textContent = ""; }
         catch(e){ console.error(e); loginMessage.textContent = "Login failed: "+(e.message||e); }
       });
-
       if (registerBtn) registerBtn.addEventListener('click', async ()=>{
-        const email = document.getElementById('email')?.value.trim() || "";
-        const pwd = document.getElementById('password')?.value.trim() || "";
-        const username = document.getElementById('username')?.value.trim() || "";
+        const email = document.getElementById('email')?.value.trim() || "", pwd = document.getElementById('password')?.value.trim() || "", username = document.getElementById('username')?.value.trim() || "";
         try { await registerFirebase(email,pwd,username); loginMessage.textContent = "Registrierung erfolgreich!"; }
         catch(e){ console.error(e); loginMessage.textContent = "Register failed: "+(e.message||e); }
       });
-
       if (logoutIcon) logoutIcon.addEventListener('click', async ()=> { try { await logoutFirebase(); } catch(e){ console.warn(e); }});
-
-      // auth state -> toggle UI
       onAuthChanged(user => {
-        const loginScreen = document.getElementById('login-screen');
-        const desktop = document.getElementById('desktop');
+        const loginScreen = document.getElementById('login-screen'), desktop = document.getElementById('desktop');
         if (user) { 
-            currentUser = user.uid; // Firebase sets the user
+            currentUser = user.uid;
             if(loginScreen) loginScreen.style.display='none'; 
             if(desktop) desktop.style.display='flex'; 
         } else { 
@@ -1052,191 +1095,109 @@
         }
       });
     };
-
     window.addEventListener('load', bindIfExists);
     </script>
 <script>
-// Robust interception: ensure all links/open requests open inside internal iframe.
-// Uses capture-phase click listener, overrides window.open, intercepts forms, and removes target attributes.
-
 (function(){
   function openInInternalBrowser(url) {
     try {
       if (!url) return;
-      // normalize
       const normalized = (new URL(url, location.href)).href;
       let browserWin = document.querySelector('.browser-window');
       if (!browserWin) {
-        // Create a single internal browser window using existing createWindow if available
         if (typeof createWindow === 'function') {
           browserWin = createWindow('Browser', `
             <div class="browser-header-bar">
-              <div class="browser-tab-bar">
-                <div class="browser-tab active"><span class="tab-title">Interner Tab</span></div>
-              </div>
+              <div class="browser-tab-bar"><div class="browser-tab active"><span class="tab-title">Interner Tab</span></div></div>
               <div class="browser-nav-bar">
                 <input type="text" class="browser-url-input" value="${normalized}">
                 <button class="hacker-btn" id="browser-go-btn">Los</button>
               </div>
             </div>
-            <div class="browser-content-area">
-              <iframe class="browser-iframe active" sandbox="allow-scripts allow-forms allow-same-origin"></iframe>
-            </div>
-          `, { width: '80vw', height: '80vh' });
+            <div class="browser-content-area"><iframe class="browser-iframe active" sandbox="allow-scripts allow-forms allow-same-origin"></iframe></div>`, { width: '80vw', height: '80vh' });
           browserWin.classList.add('browser-window');
-          // attach go button handler
           setTimeout(() => {
-            const goBtn = browserWin.querySelector('#browser-go-btn');
-            const input = browserWin.querySelector('.browser-url-input');
+            const goBtn = browserWin.querySelector('#browser-go-btn'), input = browserWin.querySelector('.browser-url-input');
             if (goBtn && input) {
-              goBtn.addEventListener('click', () => {
-                const u = input.value.trim();
-                if (u) openInInternalBrowser(u);
-              });
-              input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                  const u = input.value.trim();
-                  if (u) openInInternalBrowser(u);
-                }
-              });
+              goBtn.addEventListener('click', () => { const u = input.value.trim(); if (u) openInInternalBrowser(u); });
+              input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const u = input.value.trim(); if (u) openInInternalBrowser(u); } });
             }
           }, 50);
         } else {
-          // fallback: create minimal container
           browserWin = document.createElement('div');
           browserWin.className = 'browser-window';
           browserWin.innerHTML = `<div class="browser-nav-bar"><input type="text" class="browser-url-input" value="${normalized}"></div><div class="browser-content-area"><iframe class="browser-iframe active"></iframe></div>`;
           document.body.appendChild(browserWin);
         }
       }
-      const iframe = browserWin.querySelector('.browser-iframe.active');
-      const input = browserWin.querySelector('.browser-url-input');
-      if (iframe) {
-        // load into iframe
-        iframe.src = normalized;
-      }
+      const iframe = browserWin.querySelector('.browser-iframe.active'), input = browserWin.querySelector('.browser-url-input');
+      if (iframe) iframe.src = normalized;
       if (input) input.value = normalized;
-    } catch (err) {
-      console.error('openInInternalBrowser error:', err);
-    }
+    } catch (err) { console.error('openInInternalBrowser error:', err); }
   }
 
-  // Capture-phase click listener to intercept <a> clicks before other handlers
   document.addEventListener('click', function(e){
     try {
       const el = e.target.closest && e.target.closest('a');
       if (!el) return;
       const href = el.getAttribute('href');
-      if (!href || href.startsWith('javascript:') || href === '#') {
-        // allow JS links or anchors
-        e.preventDefault();
-        return;
-      }
-      // Respect modifier keys for user intent to open in new real tab? We'll still keep internal behavior per request.
-      e.preventDefault();
-      openInInternalBrowser(href);
-    } catch (err) {
-      // swallow
-    }
+      if (!href || href.startsWith('javascript:') || href === '#') { e.preventDefault(); return; }
+      e.preventDefault(); openInInternalBrowser(href);
+    } catch (err) {}
   }, true);
 
-  // Override window.open to route to internal browser
   (function(){
     const originalOpen = window.open;
     window.open = function(url, name, specs){
       try {
         if (url) {
           openInInternalBrowser(url);
-          // return a fake window-like object to avoid scripts breaking
-          return {
-            location: { href: url },
-            close: function(){},
-            focus: function(){},
-            // allow setting location.href
-            set href(v){ openInInternalBrowser(v); }
-          };
+          return { location: { href: url }, close: function(){}, focus: function(){}, set href(v){ openInInternalBrowser(v); } };
         }
       } catch (err) { console.error(err); }
-      // fallback
       return originalOpen.apply(window, arguments);
     };
   })();
 
-  // Intercept form submissions
   document.addEventListener('submit', function(e){
     try {
       const form = e.target;
       if (form && form.tagName === 'FORM') {
         const action = form.getAttribute('action') || location.href;
-        e.preventDefault();
-        // Build URL for GET or post as data URL for POST (we'll just navigate to action)
-        openInInternalBrowser(action);
+        e.preventDefault(); openInInternalBrowser(action);
       }
     } catch (err){}
   }, true);
 
-  // Remove target attributes from existing and new anchors to avoid opening external tabs/windows
-  function sanitizeAnchor(a){
-    try {
-      if (!(a instanceof HTMLAnchorElement)) return;
-      if (a.target && a.target.toLowerCase() !== '_self') a.removeAttribute('target');
-      // Also remove rel="external noopener" etc that may trigger external behavior
-      // keep rel for security though
-    } catch (e){}
-  }
-  function walkAndSanitize(root){
-    try {
-      const anchors = root.querySelectorAll ? root.querySelectorAll('a') : [];
-      anchors.forEach(sanitizeAnchor);
-    } catch(e){}
-  }
-  // sanitize current document
+  function sanitizeAnchor(a){ try { if (!(a instanceof HTMLAnchorElement)) return; if (a.target && a.target.toLowerCase() !== '_self') a.removeAttribute('target'); } catch (e){} }
+  function walkAndSanitize(root){ try { const anchors = root.querySelectorAll ? root.querySelectorAll('a') : []; anchors.forEach(sanitizeAnchor); } catch(e){} }
   walkAndSanitize(document);
-
-  // observe additions and sanitize dynamic anchors
   const mo = new MutationObserver(muts => {
     muts.forEach(m => {
       if (m.addedNodes && m.addedNodes.length) {
         m.addedNodes.forEach(node => {
-          if (node.nodeType === 1) {
-            if (node.matches && node.matches('a')) sanitizeAnchor(node);
-            walkAndSanitize(node);
-          }
+          if (node.nodeType === 1) { if (node.matches && node.matches('a')) sanitizeAnchor(node); walkAndSanitize(node); }
         });
       }
     });
   });
   mo.observe(document.documentElement || document.body, { childList: true, subtree: true });
-
-  // optional: prevent links with target=_blank from triggering default behavior even if other handlers try
-  window.addEventListener('auxclick', function(e){
-    const el = e.target.closest && e.target.closest('a');
-    if (el) e.preventDefault();
-  }, true);
-
+  window.addEventListener('auxclick', function(e){ const el = e.target.closest && e.target.closest('a'); if (el) e.preventDefault(); }, true);
 })();
 </script>
 
-
 <script>
-// --- Simple "hacker" tools (safe, no network attacks) ---
 document.getElementById('pwdgen-icon').addEventListener('click', () => {
     createWindow('Passwortgenerator', `<div style="padding:18px;color:#00ff00;font-family:VT323,monospace;">
       <label>Länge: <input id="pwd-length" type="number" value="16" min="4" max="128" style="width:70px;background:#000;color:#0f0;border:1px solid #0f0"></label>
-      <div style="margin-top:12px;">
-        <button class="hacker-btn primary" id="gen-pwd">Generieren</button>
-      </div>
+      <div style="margin-top:12px;"><button class="hacker-btn primary" id="gen-pwd">Generieren</button></div>
       <pre id="pwd-out" style="margin-top:12px;background:#001a00;padding:10px;border:1px solid #003300;border-radius:6px;"></pre>
     </div>`, {width:'480px', height:'300px'});
     const win = document.querySelectorAll('.terminal-window')[document.querySelectorAll('.terminal-window').length-1];
-    const btn = win.querySelector('#gen-pwd');
-    const out = win.querySelector('#pwd-out');
+    const btn = win.querySelector('#gen-pwd'), out = win.querySelector('#pwd-out');
     btn.addEventListener('click', () => {
-        const len = parseInt(win.querySelector('#pwd-length').value) || 16;
-        const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{};:,.<>?';
-        let res = '';
-        const cryptoObj = window.crypto || window.msCrypto;
-        const arr = new Uint32Array(len);
+        const len = parseInt(win.querySelector('#pwd-length').value) || 16, chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{};:,.<>?';
+        let res = ''; const cryptoObj = window.crypto || window.msCrypto, arr = new Uint32Array(len);
         cryptoObj.getRandomValues(arr);
         for (let i=0;i<len;i++) res += chars[arr[i] % chars.length];
         out.textContent = res;
@@ -1251,11 +1212,8 @@ document.getElementById('hash-icon').addEventListener('click', () => {
     </div>`, {width:'640px', height:'360px'});
     const win = document.querySelectorAll('.terminal-window')[document.querySelectorAll('.terminal-window').length-1];
     win.querySelector('#do-hash').addEventListener('click', async () => {
-        const txt = win.querySelector('#hash-input').value;
-        const enc = new TextEncoder().encode(txt);
-        const hashBuf = await crypto.subtle.digest('SHA-256', enc);
-        const hashArray = Array.from(new Uint8Array(hashBuf));
-        const hashHex = hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
+        const txt = win.querySelector('#hash-input').value, enc = new TextEncoder().encode(txt), hashBuf = await crypto.subtle.digest('SHA-256', enc);
+        const hashHex = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2,'0')).join('');
         win.querySelector('#hash-out').textContent = hashHex;
     });
 });
@@ -1263,21 +1221,12 @@ document.getElementById('hash-icon').addEventListener('click', () => {
 document.getElementById('b64-icon').addEventListener('click', () => {
     createWindow('Base64 Encoder/Decoder', `<div style="padding:18px;color:#00ff00;font-family:VT323,monospace;">
       <textarea id="b64-input" rows="6" style="width:100%;background:#000;color:#0f0;border:1px solid #0f0"></textarea>
-      <div style="margin-top:8px;display:flex;gap:8px;">
-        <button class="hacker-btn" id="b64-enc">Encode</button>
-        <button class="hacker-btn" id="b64-dec">Decode</button>
-      </div>
+      <div style="margin-top:8px;display:flex;gap:8px;"><button class="hacker-btn" id="b64-enc">Encode</button><button class="hacker-btn" id="b64-dec">Decode</button></div>
       <pre id="b64-out" style="margin-top:12px;background:#001a00;padding:10px;border:1px solid #003300;border-radius:6px;"></pre>
     </div>`, {width:'640px', height:'360px'});
     const win = document.querySelectorAll('.terminal-window')[document.querySelectorAll('.terminal-window').length-1];
-    win.querySelector('#b64-enc').addEventListener('click', () => {
-        const v = win.querySelector('#b64-input').value || '';
-        try { win.querySelector('#b64-out').textContent = btoa(unescape(encodeURIComponent(v))); } catch(e){ win.querySelector('#b64-out').textContent = 'Fehler'; }
-    });
-    win.querySelector('#b64-dec').addEventListener('click', () => {
-        const v = win.querySelector('#b64-input').value || '';
-        try { win.querySelector('#b64-out').textContent = decodeURIComponent(escape(atob(v))); } catch(e){ win.querySelector('#b64-out').textContent = 'Fehler'; }
-    });
+    win.querySelector('#b64-enc').addEventListener('click', () => { const v = win.querySelector('#b64-input').value || ''; try { win.querySelector('#b64-out').textContent = btoa(unescape(encodeURIComponent(v))); } catch(e){ win.querySelector('#b64-out').textContent = 'Fehler'; } });
+    win.querySelector('#b64-dec').addEventListener('click', () => { const v = win.querySelector('#b64-input').value || ''; try { win.querySelector('#b64-out').textContent = decodeURIComponent(escape(atob(v))); } catch(e){ win.querySelector('#b64-out').textContent = 'Fehler'; } });
 });
 
 document.getElementById('pkt-icon').addEventListener('click', () => {
