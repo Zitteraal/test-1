@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hacker-Terminal V9</title>
+    <title>Hacker-Terminal V10</title>
 
     <!-- Import der THREE.js-Bibliothek für 3D-Grafiken -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -301,10 +301,14 @@
             padding: 10px 20px;
             background-color: rgba(13, 13, 13, 0.8);
             border-top: 1px dashed #005500;
-            position: relative;
             display: flex;
             align-items: center;
             gap: 10px;
+            flex-wrap: wrap; /* NEU */
+        }
+        .image-thumb-wrapper { /* NEU */
+            position: relative;
+            line-height: 0;
         }
         .image-preview-thumb {
             max-height: 80px;
@@ -327,8 +331,17 @@
             justify-content: center;
             line-height: 1;
             padding-bottom: 2px;
-            position: static;
+            position: absolute; /* Geändert */
+            top: -8px;          /* Geändert */
+            right: -8px;        /* Geändert */
+            z-index: 1;         /* Geändert */
+            transition: transform 0.2s ease;
         }
+        .remove-image-btn:hover {
+            transform: scale(1.1);
+            background: #880000;
+        }
+
         .log-entry img {
             max-width: 90%;
             max-height: 300px;
@@ -558,6 +571,7 @@
         const apiKey = "AIzaSyB-0z8e59quUM-EaRl0tGiK-5eVaSUq3dQ";
         let highestZIndex = 2, currentUser = null;
         let animationIsActive = true; // Flag to control the 3D animation loop
+        let terminalSessions = {}; // NEU: Speichert Chat-Verläufe und Bilddaten für jede Terminal-Sitzung
 
         // =========================================================================
         // START: NEUE 3D-LADEANIMATION
@@ -621,77 +635,84 @@
             yesBtn.onclick = () => { onConfirm(); closeModal(); };
             noBtn.onclick = closeModal;
         }
-
-        function displayMessage(messagesDiv, message, sender, imageBase64 = null) {
+        
+        // =========================================================================
+        // START: CHAT-FUNKTIONALITÄT (ÜBERARBEITET)
+        // =========================================================================
+        
+        function displayMessage(messagesDiv, message, sender, images = []) {
             const messageElement = document.createElement('div');
             messageElement.classList.add('log-entry');
 
             if (sender === 'user') {
-                const userLine = document.createElement('span');
+                const userLine = document.createElement('p');
                 userLine.classList.add('user-input-line');
+                userLine.style.margin = '0';
                 userLine.textContent = `> ${message || ''}`;
                 messageElement.appendChild(userLine);
             } else {
-                messageElement.innerHTML = `> ${message.replace(/\n/g, '<br>')}`;
+                let formattedMessage = message.replace(/\n/g, '<br>');
+                formattedMessage = formattedMessage.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                formattedMessage = formattedMessage.replace(/\*(.*?)\*/g, '<em>$1</em>');
+                messageElement.innerHTML = `> ${formattedMessage}`;
             }
 
-            if (imageBase64) {
-                const imgElement = document.createElement('img');
-                imgElement.src = imageBase64;
-                messageElement.appendChild(imgElement);
+            if (images.length > 0) {
+                const imageContainer = document.createElement('div');
+                imageContainer.style.display = 'flex';
+                imageContainer.style.gap = '10px';
+                imageContainer.style.flexWrap = 'wrap';
+                imageContainer.style.marginTop = '8px';
+                
+                images.forEach(imageBase64 => {
+                    const imgElement = document.createElement('img');
+                    imgElement.src = imageBase64;
+                    imgElement.style.maxWidth = '150px';
+                    imgElement.style.maxHeight = '150px';
+                    imgElement.style.borderRadius = '6px';
+                    imgElement.style.border = '1px solid #005500';
+                    imageContainer.appendChild(imgElement);
+                });
+                messageElement.appendChild(imageContainer);
             }
             
             messagesDiv.appendChild(messageElement);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
         
-        async function getGeminiResponse(userPrompt, imageBase64 = null) {
+        async function getGeminiResponse(chatHistory) {
             if (!apiKey) {
                 console.error("API-Schlüssel fehlt.");
                 return "Entschuldigung, es gab einen Konfigurationsfehler.";
             }
-
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-            
-            const parts = [];
-            parts.push({ text: userPrompt });
-
-            if (imageBase64) {
-                const match = imageBase64.match(/^data:(image\/.+);base64,(.+)$/);
-                if (match) {
-                    const mimeType = match[1];
-                    const data = match[2];
-                    parts.push({
-                        inlineData: {
-                            mimeType: mimeType,
-                            data: data
-                        }
-                    });
-                } else {
-                    console.error("Ungültiges Base64-Bildformat.");
-                }
-            }
-
             const payload = {
-                contents: [{ role: 'user', parts: parts }],
+                contents: chatHistory,
                 tools: [{"google_search": {}}],
                 systemInstruction: { parts: [{ text: "You are a helpful AI assistant from Google. Reply helpfully and friendly in German. Format answers with Markdown." }] }
             };
             
             try {
                 const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                if (!response.ok) throw new Error(`API Error: ${response.statusText} (${response.status})`);
                 const result = await response.json();
-                return result?.candidates?.[0]?.content?.parts?.[0]?.text || "Ich konnte das Bild nicht verarbeiten oder keine Antwort finden.";
+
+                const finishReason = result?.candidates?.[0]?.finishReason;
+                if (finishReason === "SAFETY") return "Ich kann diese Anfrage nicht beantworten, da sie gegen unsere Sicherheitsrichtlinien verstößt.";
+                if (finishReason === "RECITATION") return "Meine Antwort wurde blockiert, da sie zu sehr einem geschützten Text ähnelt. Bitte formuliere deine Anfrage um.";
+                
+                return result?.candidates?.[0]?.content?.parts?.[0]?.text || "Ich konnte keine passende Antwort finden.";
             } catch (error) {
                 console.error("API call error:", error);
-                return "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.";
+                return `Ein Fehler ist aufgetreten: ${error.message}. Bitte versuchen Sie es erneut.`;
             }
         }
 
         async function sendMessage(terminalId) {
             const terminal = document.getElementById(terminalId);
             if (!terminal) return;
+            const session = terminalSessions[terminalId];
+            if (!session) return;
 
             const userInput = terminal.querySelector('.terminal-input');
             const messagesDiv = terminal.querySelector('.terminal-output');
@@ -699,33 +720,45 @@
             const fileInput = terminal.querySelector('.file-input');
 
             const message = userInput.value.trim();
-            const imageBase64 = previewContainer?.dataset.imageBase64 || null;
+            const images = [...session.images];
 
-            if (!message && !imageBase64) return;
+            if (!message && images.length === 0) return;
 
-            displayMessage(messagesDiv, message, 'user', imageBase64);
+            displayMessage(messagesDiv, message, 'user', images);
             
+            const userParts = [];
+            if (message) userParts.push({ text: message });
+            images.forEach(base64Image => {
+                const match = base64Image.match(/^data:(image\/.+);base64,(.+)$/);
+                if (match) userParts.push({ inlineData: { mimeType: match[1], data: match[2] } });
+            });
+
+            session.chatHistory.push({ role: 'user', parts: userParts });
+
             userInput.disabled = true;
             userInput.value = '';
-            if (previewContainer) {
-                delete previewContainer.dataset.imageBase64;
-                previewContainer.style.display = 'none';
-            }
-            if (fileInput) {
-                fileInput.value = '';
-            }
+            previewContainer.innerHTML = '';
+            previewContainer.style.display = 'none';
+            session.images = [];
+            if(fileInput) fileInput.value = '';
 
             try {
-                const botResponse = await getGeminiResponse(message, imageBase64);
-                displayMessage(messagesDiv, botResponse, 'bot');
+                const botResponseText = await getGeminiResponse(session.chatHistory);
+                session.chatHistory.push({ role: 'model', parts: [{ text: botResponseText }] });
+                displayMessage(messagesDiv, botResponseText, 'bot');
             } catch (error) {
                 console.error("Fehler beim Senden der Nachricht:", error);
-                displayMessage(messagesDiv, "Ein Fehler ist aufgetreten.", 'bot');
+                displayMessage(messagesDiv, "Ein kritischer Fehler ist aufgetreten.", 'bot');
+                session.chatHistory.pop();
             } finally {
                 userInput.disabled = false;
                 userInput.focus();
             }
         }
+        // =========================================================================
+        // ENDE: CHAT-FUNKTIONALITÄT
+        // =========================================================================
+
 
         let windowCounter = 0;
         function createWindow(title, contentHTML, initialSize = {width: '700px', height: '500px'}) { windowCounter++; const windowId = `window-${windowCounter}`; const newWindow = document.createElement('div'); newWindow.id = windowId; newWindow.className = 'terminal-window'; newWindow.style.zIndex = ++highestZIndex; newWindow.style.width = initialSize.width; newWindow.style.height = initialSize.height; newWindow.style.minWidth = '400px'; newWindow.style.minHeight = '300px'; const offsetX = 50 + (windowCounter * 20) % (window.innerWidth - 800); const offsetY = 50 + (windowCounter * 20) % (window.innerHeight - 600); newWindow.style.left = `${offsetX}px`; newWindow.style.top = `${offsetY}px`; newWindow.innerHTML = `<div class="terminal-header"><h2>${title}</h2><button class="close-btn">[ x ]</button></div><div class="window-content">${contentHTML}</div>`; document.body.appendChild(newWindow); desktop.style.display = 'none'; newTerminalBtn.style.display = 'block'; const header = newWindow.querySelector('.terminal-header'); const closeBtn = newWindow.querySelector('.close-btn');
@@ -773,7 +806,16 @@
             document.addEventListener('touchend', handleDragEnd);
             document.addEventListener('touchcancel', handleDragEnd);
 
-            closeBtn.addEventListener('click', () => { newWindow.remove(); if (document.querySelectorAll('.terminal-window').length === 0) { desktop.style.display = 'flex'; newTerminalBtn.style.display = 'none'; } }); return newWindow; }
+            closeBtn.addEventListener('click', () => { 
+                delete terminalSessions[windowId]; // NEU: Sitzung beim Schließen löschen
+                newWindow.remove(); 
+                if (document.querySelectorAll('.terminal-window').length === 0) { 
+                    desktop.style.display = 'flex'; 
+                    newTerminalBtn.style.display = 'none'; 
+                } 
+            }); 
+            return newWindow; 
+        }
         
         function createTerminalWindow() {
             const terminalContent = `
@@ -781,50 +823,75 @@
                     <div class="log-entry">> Initialisiere Schnittstelle... [OK]</div>
                     <div class="log-entry">> Lade Module... [OK]</div>
                 </div>
-                <div class="image-preview-container" style="display: none;">
-                    <img class="image-preview-thumb" src="">
-                    <button class="remove-image-btn" title="Bild entfernen">&times;</button>
+                <div class="image-preview-container" style="display: none; flex-wrap: wrap;">
+                    <!-- Previews werden hier dynamisch eingefügt -->
                 </div>
                 <div class="terminal-input-container">
-                    <input type="file" class="file-input" accept="image/*" style="display: none;">
-                    <button class="attach-file-btn" title="Bild anhängen">+</button>
+                    <input type="file" class="file-input" accept="image/*" style="display: none;" multiple>
+                    <button class="attach-file-btn" title="Bilder anhängen">+</button>
                     <span class="prompt-symbol">></span>
-                    <input type="text" class="terminal-input" placeholder="Nachricht oder Bild..." autofocus>
+                    <input type="text" class="terminal-input" placeholder="Nachricht oder Bilder..." autofocus>
                     <button class="sendBtn">Senden</button>
                 </div>`;
 
             const terminalWindow = createWindow('TERMINAL', terminalContent, {width: '800px', height: '500px'});
             const terminalId = terminalWindow.id;
+            
+            // NEU: Terminal-Sitzung initialisieren
+            terminalSessions[terminalId] = { chatHistory: [], images: [] };
 
             const attachBtn = terminalWindow.querySelector('.attach-file-btn');
             const fileInput = terminalWindow.querySelector('.file-input');
             const previewContainer = terminalWindow.querySelector('.image-preview-container');
-            const previewImg = terminalWindow.querySelector('.image-preview-thumb');
-            const removeImgBtn = terminalWindow.querySelector('.remove-image-btn');
-
+            
             attachBtn.addEventListener('click', () => fileInput.click());
 
             fileInput.addEventListener('change', (event) => {
-                const file = event.target.files[0];
-                if (file && file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        previewContainer.dataset.imageBase64 = e.target.result;
-                        previewImg.src = e.target.result;
-                        previewContainer.style.display = 'flex';
-                    };
-                    reader.readAsDataURL(file);
+                const session = terminalSessions[terminalId];
+                if (!session || !event.target.files) return;
+
+                previewContainer.innerHTML = '';
+                session.images = [];
+
+                if (event.target.files.length === 0) {
+                    previewContainer.style.display = 'none';
+                    return;
                 }
+                previewContainer.style.display = 'flex';
+
+                Array.from(event.target.files).forEach(file => {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            const base64String = e.target.result;
+                            session.images.push(base64String);
+
+                            const thumbWrapper = document.createElement('div');
+                            thumbWrapper.className = 'image-thumb-wrapper';
+
+                            const img = document.createElement('img');
+                            img.src = base64String;
+                            img.className = 'image-preview-thumb';
+                            
+                            const removeBtn = document.createElement('button');
+                            removeBtn.innerHTML = '&times;';
+                            removeBtn.className = 'remove-image-btn';
+                            removeBtn.title = 'Bild entfernen';
+                            removeBtn.onclick = () => {
+                                const indexToRemove = session.images.indexOf(base64String);
+                                if (indexToRemove > -1) session.images.splice(indexToRemove, 1);
+                                thumbWrapper.remove();
+                                if (session.images.length === 0) previewContainer.style.display = 'none';
+                            };
+
+                            thumbWrapper.appendChild(img);
+                            thumbWrapper.appendChild(removeBtn);
+                            previewContainer.appendChild(thumbWrapper);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
             });
-
-            const clearImage = () => {
-                delete previewContainer.dataset.imageBase64;
-                fileInput.value = '';
-                previewContainer.style.display = 'none';
-                previewImg.src = '';
-            };
-
-            removeImgBtn.addEventListener('click', clearImage);
             
             const userInput = terminalWindow.querySelector('.terminal-input');
             const sendBtn = terminalWindow.querySelector('.sendBtn');
